@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        {{ __('Add New Supply Item') }}
+        Edit Item: {{ $item->item_name }}
     </x-slot>
 
     <div class="container-fluid py-2">
@@ -16,13 +16,14 @@
                 <!-- Form Card -->
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                     <div class="card-header bg-white border-0 p-4 pb-0">
-                        <h5 class="fw-bold mb-1">Item Specifications</h5>
-                        <p class="text-muted small">Enter the details of the new supply to be tracked in the system.</p>
+                        <h5 class="fw-bold mb-1 text-success">Update Specifications</h5>
+                        <p class="text-muted small">Modify the details for <strong>{{ $item->item_name }}</strong> below.</p>
                     </div>
 
                     <div class="card-body p-4">
-                        <form action="{{ route('inventory.store') }}" method="POST">
+                        <form action="{{ route('inventory.update', $item->id) }}" method="POST">
                             @csrf
+                            @method('PATCH')
 
                             <!-- Item Name -->
                             <div class="mb-4">
@@ -30,7 +31,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-0"><i data-lucide="package" style="width: 16px;"></i></span>
                                     <input type="text" name="item_name" class="form-control border-0 bg-light py-2 px-3 rounded-end-3 shadow-none"
-                                           placeholder="e.g. A4 Bond Paper, HP 680 Ink" required>
+                                           value="{{ old('item_name', $item->item_name) }}" required>
                                 </div>
                                 <x-input-error :messages="$errors->get('item_name')" class="mt-1" />
                             </div>
@@ -41,19 +42,18 @@
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-0"><i data-lucide="align-left" style="width: 16px;"></i></span>
                                     <textarea name="specifications" class="form-control border-0 bg-light py-2 px-3 rounded-end-3 shadow-none"
-                                              rows="3" placeholder="Color, size, weight, or brand details..."></textarea>
+                                              rows="3">{{ old('specifications', $item->specifications) }}</textarea>
                                 </div>
-                                <x-input-error :messages="$errors->get('specifications')" class="mt-1" />
                             </div>
 
                             <div class="row g-4 mb-5">
-                                <!-- Initial Quantity -->
+                                <!-- Stock Quantity -->
                                 <div class="col-md-4">
-                                    <label class="form-label small fw-bold text-muted text-uppercase tracking-widest" style="font-size: 10px;">Initial Stock</label>
+                                    <label class="form-label small fw-bold text-muted text-uppercase tracking-widest" style="font-size: 10px;">Current Stock</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-0"><i data-lucide="layers" style="width: 16px;"></i></span>
                                         <input type="number" name="quantity" class="form-control border-0 bg-light py-2 px-3 rounded-end-3 shadow-none"
-                                               placeholder="0" required min="0">
+                                               value="{{ old('quantity', $item->quantity) }}" required min="0">
                                     </div>
                                 </div>
 
@@ -63,7 +63,7 @@
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-0"><i data-lucide="ruler" style="width: 16px;"></i></span>
                                         <input type="text" name="unit" class="form-control border-0 bg-light py-2 px-3 rounded-end-3 shadow-none"
-                                               placeholder="e.g. Ream, Pc, Box" required>
+                                               value="{{ old('unit', $item->unit) }}" required>
                                     </div>
                                 </div>
 
@@ -73,18 +73,18 @@
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-0 fw-bold text-muted" style="font-size: 12px;">₱</span>
                                         <input type="number" step="0.01" name="unit_price" class="form-control border-0 bg-light py-2 px-3 rounded-end-3 shadow-none"
-                                               placeholder="0.00" required min="0">
+                                               value="{{ old('unit_price', $item->unit_price) }}" required min="0">
                                     </div>
                                 </div>
                             </div>
 
                             <div class="d-flex gap-3">
-                                <button type="reset" class="btn btn-light fw-bold flex-grow-1 py-3 rounded-3 border">
-                                    Clear Form
-                                </button>
+                                <a href="{{ route('inventory.index') }}" class="btn btn-light fw-bold flex-grow-1 py-3 rounded-3 border">
+                                    Cancel Changes
+                                </a>
                                 <button type="submit" class="btn btn-htc fw-bold flex-grow-1 py-3 rounded-3 shadow-sm">
-                                    <i data-lucide="check-circle" class="me-2" style="width: 18px; vertical-align: middle;"></i>
-                                    Save to Inventory
+                                    <i data-lucide="save" class="me-2" style="width: 18px; vertical-align: middle;"></i>
+                                    Update Item
                                 </button>
                             </div>
                         </form>

@@ -16,7 +16,6 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// DASHBOARD LOGIC
 // DASHBOARD LOGIC (Updated for Multi-item Requisitions)
 Route::get('/dashboard', function () {
     $user = Auth::user();
@@ -33,7 +32,7 @@ Route::get('/dashboard', function () {
         ->count();
 
     // 3. Get Recent Requisitions (with their items)
-    $recentRequests = Requisition::with('items') // This gets the "Cart" items
+    $recentRequests = Requisition::with('items')
         ->where('user_id', $user->id)
         ->latest()
         ->take(5)
@@ -57,17 +56,22 @@ Route::get('/dashboard', function () {
     Route::middleware(['auth'])->group(function () {
         Route::get('/requests', [RequestController::class, 'index'])->name('requests.index');
         Route::post('/requests', [RequestController::class, 'store'])->name('requests.store');
-        Route::get('/notifications', function() { return view('dashboard'); }); // Placeholder for now
     });
 
-// SMO INVENTORY & USER MANAGEMENT ROUTES
+    // SMO INVENTORY & USER MANAGEMENT ROUTES
     Route::middleware(['auth', 'role:smo'])->group(function () {
         // Inventory Management
         Route::get('/inventory', [SupplyController::class, 'index'])->name('inventory.index');
         Route::get('/inventory/create', [SupplyController::class, 'create'])->name('inventory.create');
         Route::post('/inventory', [SupplyController::class, 'store'])->name('inventory.store');
 
-        // NEW: USER ACCESS MANAGEMENT (SMO Approves new registrations)
+        // --- ADDED THESE INVENTORY ROUTES ---
+        Route::get('/inventory/{id}/edit', [SupplyController::class, 'edit'])->name('inventory.edit');
+        Route::patch('/inventory/{id}', [SupplyController::class, 'update'])->name('inventory.update');
+        Route::delete('/inventory/{id}', [SupplyController::class, 'destroy'])->name('inventory.destroy');
+        // -------------------------------------
+
+        // USER ACCESS MANAGEMENT
         Route::get('/admin/users/pending', [ProfileController::class, 'pendingUsers'])->name('admin.users.pending');
         Route::post('/admin/users/{id}/approve', [ProfileController::class, 'approveUser'])->name('admin.users.approve');
     });
@@ -82,13 +86,9 @@ Route::get('/dashboard', function () {
     require __DIR__.'/auth.php';
 
     // ADMIN APPROVAL ROUTES
-    // ALLOW ALL BOSS ROLES: dept_head, vp, provost, president
-    // ADD 'smo' TO THE LIST OF ALLOWED ROLES
     Route::middleware(['auth', 'role:dept_head,vp,provost,president,smo'])->group(function () {
         Route::get('/admin/approvals', [RequestController::class, 'adminIndex'])->name('admin.approvals');
         Route::post('/admin/requests/{id}/status', [RequestController::class, 'updateStatus'])->name('admin.status.update');
-
-        // Add the release route here too if it isn't already
         Route::post('/admin/requests/{id}/release', [RequestController::class, 'releaseRequest'])->name('admin.requests.release');
     });
 
@@ -96,8 +96,6 @@ Route::get('/dashboard', function () {
 
     // Change the submission route to point to the new Requisition Controller
     Route::post('/requisitions', [RequisitionController::class, 'store'])->name('requisitions.store');
-
-    Route::post('/admin/requests/{id}/release', [RequestController::class, 'releaseRequest'])->name('admin.requests.release')->middleware('role:smo');
 
     Route::get('/requests/{id}/download', [RequestController::class, 'downloadPDF'])->name('requests.download');
 
