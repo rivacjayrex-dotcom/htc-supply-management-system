@@ -87,32 +87,49 @@
                         </div>
 
                         <!-- TIMELINE (The Shopee-style bar inside the modal) -->
-                        <div class="mb-5 px-4">
+                        <!-- DYNAMIC TIMELINE -->
+                        <div class="mb-5 px-2">
                             <div class="tracking-stepper">
-                            <!-- Step 1: Submission -->
-                            <div class="step-item completed">
-                                <div class="step-icon"><i data-lucide="send"></i></div>
-                                <div class="step-label">Submitted</div>
-                            </div>
+                                <!-- Step 1: Submission (Always there) -->
+                                <div class="step-item completed">
+                                    <div class="step-icon"><i data-lucide="send"></i></div>
+                                    <div class="step-label">Submitted</div>
+                                </div>
 
-                            <!-- Step 2: Dept Head (Active if status is pending) -->
-                            <div class="step-item" :class="['approved_dept', 'approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'pending' ? 'active' : '')">
-                                <div class="step-icon"><i data-lucide="user-check"></i></div>
-                                <div class="step-label">Dept Head</div>
-                            </div>
+                                <!-- Step 2: Dept Head (Always there) -->
+                                <div class="step-item" :class="['approved_dept', 'approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'pending' ? 'active' : '')">
+                                    <div class="step-icon"><i data-lucide="user-check"></i></div>
+                                    <div class="step-label">Dept Head</div>
+                                </div>
 
-                            <!-- Step 3: VP (Active if approved by Dept) -->
-                            <div class="step-item" :class="['approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'approved_dept' ? 'active' : '')">
-                                <div class="step-icon"><i data-lucide="shield-check"></i></div>
-                                <div class="step-label">VP Office</div>
-                            </div>
+                                <!-- Step 3: VP (Always there - Finance for Minor, Admin for Major) -->
+                                <div class="step-item" :class="['approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'approved_dept' ? 'active' : '')">
+                                    <div class="step-icon"><i data-lucide="shield-check"></i></div>
+                                    <div class="step-label" x-text="selectedReq.request_type == 'minor' ? 'VP Finance' : 'VP Admin'"></div>
+                                </div>
 
-                            <!-- Step 4: Released -->
-                            <div class="step-item" :class="selectedReq.status == 'released' ? 'completed' : ''">
-                                <div class="step-icon"><i data-lucide="package"></i></div>
-                                <div class="step-label">Released</div>
+                                <!-- Step 4: Provost (ONLY FOR MAJOR) -->
+                                <template x-if="selectedReq.request_type == 'major'">
+                                    <div class="step-item" :class="['approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'approved_vp' ? 'active' : '')">
+                                        <div class="step-icon"><i data-lucide="graduation-cap"></i></div>
+                                        <div class="step-label">Provost</div>
+                                    </div>
+                                </template>
+
+                                <!-- Step 5: President (ONLY FOR MAJOR) -->
+                                <template x-if="selectedReq.request_type == 'major'">
+                                    <div class="step-item" :class="['approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'approved_provost' ? 'active' : '')">
+                                        <div class="step-icon"><i data-lucide="award"></i></div>
+                                        <div class="step-label">President</div>
+                                    </div>
+                                </template>
+
+                                <!-- Step 6: Released (Always the final goal) -->
+                                <div class="step-item" :class="selectedReq.status == 'released' ? 'completed' : ''">
+                                    <div class="step-icon"><i data-lucide="package"></i></div>
+                                    <div class="step-label">Released</div>
+                                </div>
                             </div>
-                        </div>
                         </div>
 
                         <!-- ITEMS TABLE -->

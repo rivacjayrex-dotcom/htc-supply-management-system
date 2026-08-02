@@ -18,13 +18,13 @@
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-body p-4 p-lg-5">
                 <div class="tracking-stepper">
-                    <!-- Step 1: Submission -->
+                    <!-- 1. Submitted -->
                     <div class="step-item completed">
                         <div class="step-icon"><i data-lucide="send"></i></div>
                         <div class="step-label">Submitted</div>
                     </div>
 
-                    <!-- Step 2: Dept Approval -->
+                    <!-- 2. Dept Head -->
                     @php
                         $isDeptDone = in_array($request->status, ['approved_dept', 'approved_vp', 'approved_provost', 'approved_president', 'released']);
                         $isDeptActive = ($request->status == 'pending');
@@ -34,18 +34,28 @@
                         <div class="step-label">Dept. Head</div>
                     </div>
 
-                    <!-- Step 3: VP Approval -->
+                    <!-- 3. VP Office -->
                     @php
                         $isVPDone = in_array($request->status, ['approved_vp', 'approved_provost', 'approved_president', 'released']);
                         $isVPActive = ($request->status == 'approved_dept');
                     @endphp
                     <div class="step-item {{ $isVPDone ? 'completed' : ($isVPActive ? 'active' : '') }}">
                         <div class="step-icon"><i data-lucide="shield-check"></i></div>
-                        <div class="step-label">VP Office</div>
+                        <div class="step-label">{{ $request->request_type == 'minor' ? 'VP Finance' : 'VP Admin' }}</div>
                     </div>
 
                     @if($request->request_type == 'major')
-                        <!-- Step 4: President (For Major) -->
+                        <!-- 4. Provost (MAJOR ONLY) -->
+                        @php
+                            $isProvostDone = in_array($request->status, ['approved_provost', 'approved_president', 'released']);
+                            $isProvostActive = ($request->status == 'approved_vp');
+                        @endphp
+                        <div class="step-item {{ $isProvostDone ? 'completed' : ($isProvostActive ? 'active' : '') }}">
+                            <div class="step-icon"><i data-lucide="graduation-cap"></i></div>
+                            <div class="step-label">Provost</div>
+                        </div>
+
+                        <!-- 5. President (MAJOR ONLY) -->
                         @php
                             $isPresDone = in_array($request->status, ['approved_president', 'released']);
                             $isPresActive = ($request->status == 'approved_provost');
@@ -56,7 +66,7 @@
                         </div>
                     @endif
 
-                    <!-- Step 5: Fulfillment -->
+                    <!-- 6. Fulfillment -->
                     <div class="step-item {{ $request->status == 'released' ? 'completed' : '' }}">
                         <div class="step-icon"><i data-lucide="package-check"></i></div>
                         <div class="step-label">Released</div>

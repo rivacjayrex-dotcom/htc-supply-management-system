@@ -122,46 +122,50 @@ class RequestController extends Controller
 
     public function updateStatus(Request $request, $id)
     {
-        $sr = SupplyRequest::findOrFail($id);
+        // 1. CHANGE MODEL: Switch from SupplyRequest to Requisition
+        // We also load 'items' so we can get the name for the notification
+        $sr = \App\Models\Requisition::with('items')->findOrFail($id);
         $role = Auth::user()->role;
 
-        // Save the remark (if provided)
+        // 2. Save the remark
         $sr->remarks = $request->remarks;
 
         if ($request->status == 'rejected') {
             $sr->status = 'rejected';
         } else {
-            // Your existing routing logic...
+            // Institutional Routing Logic
             if ($role == 'dept_head') $sr->status = 'approved_dept';
             elseif ($role == 'vp') $sr->status = 'approved_vp';
             elseif ($role == 'provost') $sr->status = 'approved_provost';
             elseif ($role == 'president') $sr->status = 'approved_president';
         }
 
-            $statusLabel = str_replace('_', ' ', $sr->status);
-            $type = ($request->status == 'rejected') ? 'danger' : 'success';
-            $icon = ($request->status == 'rejected') ? 'x-circle' : 'check-circle';
+        $sr->save();
 
-            $this->sendAlert($sr->user_id, "Request Update: {$statusLabel}", "Your request for {$sr->item_name} has been {$statusLabel}.", $icon, $type);
+        // 3. Handle the Item Name for the notification
+        // Since there are multiple items, we show the first one
+        $itemName = $sr->items->first()->item_name ?? 'Items';
+        $statusLabel = str_replace('_', ' ', $sr->status);
+        $type = ($request->status == 'rejected') ? 'danger' : 'success';
+        $icon = ($request->status == 'rejected') ? 'x-circle' : 'check-circle';
 
-            $sr->save();
+        // 4. Send the Alert (Internal System)
+        $this->sendAlert(
+            $sr->user_id,
+            "Request Update: {$statusLabel}",
+            "Your request for {$itemName} has been updated to {$statusLabel}.",
+            $icon,
+            $type
+        );
 
-            // After the $sr->save() line:
-            \App\Models\Notification::create([
-                'user_id' => $sr->user_id, // Notify the employee
-                'title' => 'Request Approved',
-                'message' => "Update: Your request for {$sr->item_name} was approved by " . Auth::user()->role . ".",
-                'icon' => 'check-circle',
-                'type' => 'success'
-            ]);
-
-            return back()->with('success', 'Status updated with remarks.');
-        }
+        // 5. Use redirect instead of back() to ensure the list refreshes properly
+        return redirect()->route('admin.approvals')->with('success', 'Status updated with remarks.');
+    }
 
     public function notifications()
     {
         // Fetch requests that are NOT pending (meaning they have an update)
-        $notifications = SupplyRequest::where('user_id', Auth::id())
+        $notifications = \App\Models\Requisition::where('user_id', Auth::id())
             ->whereIn('status', ['approved', 'rejected', 'released'])
             ->latest('updated_at')
             ->get();
@@ -187,7 +191,7 @@ class RequestController extends Controller
     }
     public function releaseRequest($id)
     {
-        $sr = SupplyRequest::findOrFail($id);
+        $sr = Requisition::findOrFail($id);
 
         // Find the actual item in inventory
         $item = Supply::where('item_name', $sr->item_name)->first();
