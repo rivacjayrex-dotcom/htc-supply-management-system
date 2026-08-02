@@ -48,9 +48,9 @@
                                 </td>
                                 <td class="fw-bold text-success">₱{{ number_format($req->grand_total, 2) }}</td>
                                 <td class="pe-4 text-end">
-                                    <button class="btn btn-sm btn-htc px-3 rounded-pill shadow-sm"
+                                    <button class="btn btn-sm {{ Auth::user()->role == 'smo' ? 'btn-primary' : 'btn-htc' }} px-3 rounded-pill shadow-sm"
                                             @click="openDetails({{ $req }}, {{ $req->items }}, '{{ $req->user->name }}', '{{ $req->user->department }}')">
-                                        See More & Review
+                                        {{ Auth::user()->role == 'smo' ? 'Review & Release' : 'See More & Review' }}
                                     </button>
                                 </td>
                             </tr>
@@ -165,18 +165,37 @@
                         </div>
 
                         <!-- DECISION FORM -->
-                        <form :action="'/admin/requests/' + selectedReq.id + '/status'" method="POST">
-                            @csrf
-                            <div class="mb-3">
-                                <label class="form-label small fw-bold text-muted uppercase">Signatory Remarks (Optional)</label>
-                                <textarea name="remarks" class="form-control border-0 bg-light rounded-3" rows="2" placeholder="Explain the reason for approval or rejection..."></textarea>
-                            </div>
+                        <div class="mt-4">
+                            @if(Auth::user()->role == 'smo')
+                                <!-- SMO VIEW: RELEASE FORM -->
+                                <form :action="'{{ url('/admin/requests') }}/' + selectedReq.id + '/release'" method="POST">
+                                    @csrf
+                                    <div class="alert bg-light border-0 small text-muted mb-3">
+                                        <i data-lucide="info" class="me-1" style="width: 12px;"></i>
+                                        By clicking Release, you confirm that the items above have been prepared and handed over to the requestor.
+                                    </div>
 
-                            <div class="d-flex gap-2">
-                                <button name="status" value="rejected" class="btn btn-outline-danger fw-bold flex-grow-1 py-2">Reject Request</button>
-                                <button name="status" value="approved" class="btn btn-success fw-bold flex-grow-1 py-2 shadow-sm">Approve Requisition</button>
-                            </div>
-                        </form>
+                                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" style="border-radius: 12px;">
+                                        <i data-lucide="package-check" class="me-2" style="width: 18px; vertical-align: middle;"></i>
+                                        CONFIRM RELEASE & UPDATE INVENTORY
+                                    </button>
+                                </form>
+                            @else
+                                <!-- BOSS VIEW: APPROVAL/REJECTION FORM -->
+                                <form :action="'{{ url('/admin/requests') }}/' + selectedReq.id + '/status'" method="POST">
+                                    @csrf
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-bold text-muted uppercase">Signatory Remarks (Optional)</label>
+                                        <textarea name="remarks" class="form-control border-0 bg-light rounded-3" rows="2" placeholder="Explain the reason for approval or rejection..."></textarea>
+                                    </div>
+
+                                    <div class="d-flex gap-2">
+                                        <button name="status" value="rejected" class="btn btn-outline-danger fw-bold flex-grow-1 py-2" style="border-radius: 10px;">Reject Request</button>
+                                        <button name="status" value="approved" class="btn btn-success fw-bold flex-grow-1 py-2 shadow-sm" style="border-radius: 10px;">Approve Requisition</button>
+                                    </div>
+                                </form>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
