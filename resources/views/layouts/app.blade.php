@@ -257,26 +257,48 @@
     </div>
 
     <!-- GLOBAL REQUEST MODAL -->
-    <div class="modal fade" id="globalRequestModal" tabindex="-1" aria-hidden="true" x-data="cartSystem()">
+    <div class="modal fade" id="globalRequestModal" tabindex="-1" aria-hidden="true"
+        x-data="{
+            tier: 'minor',
+            view: 'selection',
+            cart: [{ name: '', specs: '', qty: 1, unit: 'pc', price: 0 }],
+            addItem() {
+                this.cart.push({ name: '', specs: '', qty: 1, unit: 'pc', price: 0 });
+                setTimeout(() => lucide.createIcons(), 10);
+            },
+            removeItem(index) {
+                if(this.cart.length > 1) this.cart.splice(index, 1);
+            },
+            get grandTotal() {
+                return this.cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
+            },
+            formatMoney(val) {
+                return parseFloat(val || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+            }
+        }">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
 
-                <!-- VIEW 1: TIER SELECTION -->
-                <div id="tierSelectionView" class="p-5">
+                <!-- VIEW 1: TIER SELECTION (Cards) -->
+                <div x-show="view === 'selection'" class="p-5">
                     <div class="text-center mb-5">
                         <h3 class="fw-bold">Initialize Procurement</h3>
                         <p class="text-muted">Select the appropriate request tier to proceed</p>
                     </div>
                     <div class="row g-4">
+                        <!-- Minor Card -->
                         <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm p-4 text-center" style="cursor:pointer" onclick="showRequestForm('minor')">
+                            <div class="card h-100 border-0 shadow-sm p-4 text-center" style="cursor:pointer"
+                                @click="tier = 'minor'; view = 'form'; setTimeout(() => lucide.createIcons(), 10);">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px; background-color: #f0f7f1; color: #144521; font-size: 1.5rem;">📦</div>
                                 <h5 class="fw-bold">Minor Request</h5>
                                 <small class="text-muted">Standard office supplies.</small>
                             </div>
                         </div>
+                        <!-- Major Card -->
                         <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm p-4 text-center" style="cursor:pointer" onclick="showRequestForm('major')">
+                            <div class="card h-100 border-0 shadow-sm p-4 text-center" style="cursor:pointer"
+                                @click="tier = 'major'; view = 'form'; setTimeout(() => lucide.createIcons(), 10);">
                                 <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px; background-color: #fff4e6; color: #fd7e14; font-size: 1.5rem;">🏢</div>
                                 <h5 class="fw-bold">Major Request</h5>
                                 <small class="text-muted">High-value equipment.</small>
@@ -285,17 +307,20 @@
                     </div>
                 </div>
 
-                <!-- VIEW 2: FORM -->
-                <div id="formView" class="p-4 d-none">
+                <!-- VIEW 2: THE ACTUAL FORM -->
+                <div x-show="view === 'form'" class="p-4" x-cloak>
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <button type="button" class="btn btn-sm btn-light rounded-pill px-3" onclick="showTiers()">← Back</button>
+                        <button type="button" class="btn btn-sm btn-light rounded-pill px-3" @click="view = 'selection'">← Back</button>
+                        <!-- TIER TITLE UPDATES AUTOMATICALLY -->
                         <h5 class="fw-bold m-0 text-uppercase"><span x-text="tier"></span> Requisition</h5>
                         <div class="fw-bold text-success">₱<span x-text="formatMoney(grandTotal)"></span></div>
                     </div>
 
                     <form action="{{ route('requisitions.store') }}" method="POST">
                         @csrf
+                        <!-- CRUCIAL: This hidden input is now bound to the Alpine tier variable -->
                         <input type="hidden" name="request_type" :value="tier">
+
                         <div class="table-responsive mb-3" style="max-height: 350px;">
                             <table class="table table-sm align-middle">
                                 <thead class="bg-light small fw-bold">
@@ -322,7 +347,11 @@
                                             </td>
                                             <td><input type="number" :name="'items['+index+'][price]'" x-model.number="item.price" step="0.01" class="form-control form-control-sm border-0 bg-light" required></td>
                                             <td class="text-end fw-bold small text-success">₱<span x-text="formatMoney(item.qty * item.price)"></span></td>
-                                            <td><button type="button" @click="removeItem(index)" class="btn btn-sm text-danger" x-show="cart.length > 1"><i data-lucide="trash-2" style="width:14px"></i></button></td>
+                                            <td>
+                                                <button type="button" @click="removeItem(index)" class="btn btn-sm text-danger" x-show="cart.length > 1">
+                                                    <i data-lucide="trash-2" style="width:14px"></i>
+                                                </button>
+                                            </td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -355,17 +384,13 @@
         }
 
         // Modal Controls
-        function showRequestForm(tier) {
-            document.getElementById('tierSelectionView').classList.add('d-none');
-            document.getElementById('formView').classList.remove('d-none');
-            const alpine = document.querySelector('[x-data="cartSystem()"]').__x.$data;
-            alpine.tier = tier;
-        }
-
-        function showTiers() {
-            document.getElementById('formView').classList.add('d-none');
-            document.getElementById('tierSelectionView').classList.remove('d-none');
-        }
+        const myModalEl = document.getElementById('globalRequestModal')
+            myModalEl.addEventListener('hidden.bs.modal', event => {
+                // This ensures if they open it again, it starts at the cards
+                const alpine = document.querySelector('[x-data]').__x.$data;
+                alpine.view = 'selection';
+                alpine.cart = [{ name: '', specs: '', qty: 1, unit: 'pc', price: 0 }];
+            })
     </script>
 </body>
 </html>
