@@ -156,10 +156,29 @@ class RequestController extends Controller
      */
     public function notifications()
     {
-        $notifications = Notification::where('user_id', Auth::id())->latest()->get();
-        Notification::where('user_id', Auth::id())->where('is_read', false)->update(['is_read' => true]);
+        $user = Auth::user();
+        $allNotes = \App\Models\Notification::where('user_id', $user->id)->latest()->get();
 
-        return view('notifications', compact('notifications'));
+        // Categorized notes for tabs
+        $approvalNotes = $allNotes->where('type', 'success');
+        $deadlineNotes = $allNotes->where('type', 'danger');
+
+        // 1. Data for SMO (Critical Deadlines)
+        $criticalRequests = ($user->role == 'smo')
+            ? \App\Models\Requisition::whereIn('status', ['approved_president', 'approved_vp'])
+                ->where('updated_at', '<=', now()->subDays(2))->get()
+            : [];
+
+        // 2. Data for Employee/Staff (Personal Summary)
+        $personalStats = [
+            'total' => \App\Models\Requisition::where('user_id', $user->id)->count(),
+            'pending' => \App\Models\Requisition::where('user_id', $user->id)->where('status', 'pending')->count(),
+            'released' => \App\Models\Requisition::where('user_id', $user->id)->where('status', 'released')->count(),
+        ];
+
+        \App\Models\Notification::where('user_id', $user->id)->where('is_read', false)->update(['is_read' => true]);
+
+        return view('notifications', compact('allNotes', 'approvalNotes', 'deadlineNotes', 'criticalRequests', 'personalStats'));
     }
 
     public function show($id)
