@@ -183,6 +183,84 @@
         .step-item .step-icon, .step-item::after {
             transition: all 0.5s ease-in-out;
         }
+
+        /* --- MODERN PROCUREMENT CARDS --- */
+        .procurement-card {
+            background: white;
+            border: 1px solid #f1f5f9;
+            border-radius: 20px;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            height: 100%;
+        }
+
+        .procurement-card:hover {
+            border-color: var(--htc-green);
+            background-color: #f8fafc;
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+        }
+
+        .card-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-right: 1.25rem;
+            transition: all 0.3s ease;
+        }
+
+        .procurement-card:hover .card-icon-wrapper {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        .card-content {
+            flex-grow: 1;
+        }
+
+        .card-arrow {
+            color: #cbd5e1;
+            transition: all 0.3s ease;
+            padding-left: 10px;
+        }
+
+        .procurement-card:hover .card-arrow {
+            color: var(--htc-green);
+            transform: translateX(5px);
+        }
+
+        /* Modal Inner Background Color */
+        #globalRequestModal .modal-content {
+            background-color: #ffffff;
+        }
+
+        #globalRequestModal .bg-light {
+            background-color: #f8fafc !important;
+        }
+
+        #smoTabs .nav-link {
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        #smoTabs .nav-link.active {
+            background-color: var(--htc-green) !important;
+            color: white !important;
+            border-color: var(--htc-green) !important;
+            box-shadow: 0 4px 12px rgba(24, 91, 59, 0.2);
+        }
+
+        #smoTabs .badge {
+            background-color: rgba(255, 255, 255, 0.2) !important;
+        }
     </style>
 </head>
 <body>
@@ -320,33 +398,55 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
 
-                <!-- VIEW 1: TIER SELECTION (Cards) -->
+                <!-- VIEW 1: TIER SELECTION (Redesigned) -->
                 <div x-show="view === 'selection'" class="p-5">
                     <div class="text-center mb-5">
-                        <h3 class="fw-bold">Initialize Procurement</h3>
-                        <p class="text-muted">Select the appropriate request tier to proceed</p>
+                        <h3 class="fw-bold text-dark">Initialize Procurement</h3>
+                        <p class="text-muted mx-auto" style="max-width: 400px;">Select the appropriate requisition tier. Note that Major requests require additional administrative signatures.</p>
                     </div>
-                    <div class="row g-4">
-                        <!-- Minor Card -->
+
+                    <div class="row g-4 justify-content-center">
+                        <!-- Minor Request Card -->
                         <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm p-4 text-center" style="cursor:pointer"
-                                @click="tier = 'minor'; view = 'form'; setTimeout(() => lucide.createIcons(), 10);">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px; background-color: #f0f7f1; color: #144521; font-size: 1.5rem;">📦</div>
-                                <h5 class="fw-bold">Minor Request</h5>
-                                <small class="text-muted">Standard office supplies.</small>
+                            <div class="procurement-card" @click="tier = 'minor'; view = 'form'; setTimeout(() => lucide.createIcons(), 10);">
+                                <div class="card-icon-wrapper bg-success-subtle text-success">
+                                    <i data-lucide="package" style="width: 32px; height: 32px;"></i>
+                                </div>
+                                <div class="card-content">
+                                    <h5 class="fw-bold mb-1">Minor Request</h5>
+                                    <p class="text-muted small mb-0">< 1,000.00</p>
+                                    <p class="text-muted small mb-0">Standard office supplies, stationeries, and low-value routine items.</p>
+                                </div>
+                                <div class="card-arrow">
+                                    <i data-lucide="chevron-right"></i>
+                                </div>
                             </div>
                         </div>
-                        <!-- Major Card -->
+
+                        <!-- Major Request Card -->
                         <div class="col-md-6">
-                            <div class="card h-100 border-0 shadow-sm p-4 text-center" style="cursor:pointer"
-                                @click="tier = 'major'; view = 'form'; setTimeout(() => lucide.createIcons(), 10);">
-                                <div class="rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 60px; height: 60px; background-color: #fff4e6; color: #fd7e14; font-size: 1.5rem;">🏢</div>
-                                <h5 class="fw-bold">Major Request</h5>
-                                <small class="text-muted">High-value equipment.</small>
+                            <div class="procurement-card" @click="tier = 'major'; view = 'form'; setTimeout(() => lucide.createIcons(), 10);">
+                                <div class="card-icon-wrapper bg-warning-subtle text-warning">
+                                    <i data-lucide="landmark" style="width: 32px; height: 32px;"></i>
+                                </div>
+                                <div class="card-content">
+                                    <h5 class="fw-bold mb-1">Major Request</h5>
+                                    <p class="text-muted small mb-0">> 1,000.00</p>
+                                    <p class="text-muted small mb-0">High-value equipment, IT infrastructure, and bulk institutional orders.</p>
+                                </div>
+                                <div class="card-arrow">
+                                    <i data-lucide="chevron-right"></i>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
+
+            <div class="text-center mt-5">
+                <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">
+                    Cancel and close
+                </button>
+            </div>
+        </div>
 
                 <!-- VIEW 2: THE ACTUAL FORM -->
                 <div x-show="view === 'form'" class="p-4" x-cloak>

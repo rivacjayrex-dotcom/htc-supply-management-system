@@ -1,10 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
-        {{ __('Pending Request Approvals') }}
+        {{ Auth::user()->role == 'smo' ? __('Release Queue') : __('Pending Request Approvals') }}
     </x-slot>
 
     <div class="container-fluid py-2" x-data="approvalManager()">
-        <!-- ALERTS -->
+        <!-- ALERTS (Keep existing) -->
         @if(session('success'))
             <div class="alert alert-success border-0 shadow-sm mb-4 rounded-4 d-flex align-items-center">
                 <i data-lucide="check-circle" class="me-2"></i> {{ session('success') }}
@@ -13,54 +13,48 @@
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-header bg-white border-0 p-4">
-                <h5 class="fw-bold mb-0">Requisition Queue</h5>
-                <p class="text-muted small mb-0">Review and act on pending procurement requests.</p>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h5 class="fw-bold mb-0">Requisition Queue</h5>
+                        <p class="text-muted small mb-0">Monitor and process procurement requests.</p>
+                    </div>
+                </div>
+
+                <!-- TABS FOR SMO -->
+                @if(Auth::user()->role == 'smo')
+                    <ul class="nav nav-pills gap-2" id="smoTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active rounded-pill px-4 fw-bold small text-uppercase" id="minor-tab" data-bs-toggle="pill" data-bs-target="#minor" type="button">
+                                Minor Requests <span class="badge bg-white text-primary ms-2">{{ $pendingMinor->count() }}</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link rounded-pill px-4 fw-bold small text-uppercase" id="major-tab" data-bs-toggle="pill" data-bs-target="#major" type="button">
+                                Major Requests <span class="badge bg-white text-warning ms-2">{{ $pendingMajor->count() }}</span>
+                            </button>
+                        </li>
+                    </ul>
+                @endif
             </div>
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light text-muted small text-uppercase">
-                        <tr>
-                            <th class="ps-4 py-3">Req #</th>
-                            <th class="py-3">Requestor</th>
-                            <th class="py-3">Department</th>
-                            <th class="py-3">Items</th>
-                            <th class="py-3">Total</th>
-                            <th class="pe-4 py-3 text-end">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($pendingRequests as $req)
-                            <tr>
-                                <td class="ps-4 fw-mono text-muted">#{{ $req->id }}</td>
-                                <td>
-                                    <div class="fw-bold text-dark">{{ $req->user->name ?? 'Unknown' }}</div>
-                                    <div class="small text-muted" style="font-size: 10px;">ID: {{ $req->user->school_id ?? 'N/A' }}</div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-light text-dark border px-2">{{ $req->user->department ?? 'General' }}</span>
-                                </td>
-                                <td>
-                                    <span class="fw-semibold">{{ $req->items->first()->item_name ?? 'Item' }}</span>
-                                    @if($req->items->count() > 1)
-                                        <span class="text-muted small"> (+{{ $req->items->count() - 1 }} more)</span>
-                                    @endif
-                                </td>
-                                <td class="fw-bold text-success">₱{{ number_format($req->grand_total, 2) }}</td>
-                                <td class="pe-4 text-end">
-                                    <button class="btn btn-sm {{ Auth::user()->role == 'smo' ? 'btn-primary' : 'btn-htc' }} px-3 rounded-pill shadow-sm"
-                                            @click="openDetails({{ $req }}, {{ $req->items }}, '{{ addslashes($req->user->name ?? 'Unknown') }}', '{{ $req->user->department ?? 'General' }}')">
-                                        {{ Auth::user()->role == 'smo' ? 'Review & Release' : 'See More & Review' }}
-                                    </button>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="text-center py-5 text-muted italic">No pending requisitions at this time.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            <div class="card-body p-0">
+                <div class="tab-content">
+                    @if(Auth::user()->role == 'smo')
+                        <!-- TAB 1: MINOR (SMO ONLY) -->
+                        <div class="tab-pane fade show active" id="minor">
+                            @include('admin.partials.approvals-table', ['requests' => $pendingMinor])
+                        </div>
+                        <!-- TAB 2: MAJOR (SMO ONLY) -->
+                        <div class="tab-pane fade" id="major">
+                            @include('admin.partials.approvals-table', ['requests' => $pendingMajor])
+                        </div>
+                    @else
+                        <!-- STANDARD VIEW FOR BOSSES -->
+                        <div class="tab-pane fade show active">
+                            @include('admin.partials.approvals-table', ['requests' => $pendingRequests])
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
 

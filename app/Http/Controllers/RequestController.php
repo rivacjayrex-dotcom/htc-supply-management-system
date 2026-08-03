@@ -42,38 +42,41 @@ class RequestController extends Controller
     {
         $user = Auth::user();
 
-        $pendingRequests = Requisition::with(['items', 'user'])
-            // 1. Dept Head: Sees everything brand new
+        // 1. Initial Query for everyone
+        $query = Requisition::with(['items', 'user'])
             ->when($user->role == 'dept_head', function($q) {
                 return $q->where('status', 'pending');
             })
-            // 2. VP FINANCE sees MINOR requests approved by Dept Head
             ->when($user->role == 'vp_finance', function($q) {
                 return $q->where('status', 'approved_dept')->where('request_type', 'minor');
             })
-            // 3. VP FOR ADMIN: Only sees MAJOR requests approved by Dept Head
             ->when($user->role == 'vp_admin', function($q) {
                 return $q->where('status', 'approved_dept')->where('request_type', 'major');
             })
-            // 4. Provost: Only sees MAJOR requests approved by VP Admin
             ->when($user->role == 'provost', function($q) {
                 return $q->where('status', 'approved_vp')->where('request_type', 'major');
             })
-            // 5. President: Only sees MAJOR requests approved by Provost
             ->when($user->role == 'president', function($q) {
                 return $q->where('status', 'approved_provost');
-            })
-            // 6. SMO: Sees fully signed Minor (VP Finance) or Major (President)
-            ->when($user->role == 'smo', function($q) {
-                return $q->where(function($query) {
-                    $query->where('status', 'approved_president') // Major end
-                        ->orWhere(function($sub) {
-                            $sub->where('status', 'approved_vp')->where('request_type', 'minor'); // Minor end
-                        });
-                });
-            })
-            ->latest()->get();
+            });
 
+        // 2. SMO SPECIAL LOGIC: Split Minor and Major
+        if ($user->role == 'smo') {
+            $pendingMinor = Requisition::with(['items', 'user'])
+                ->where('status', 'approved_vp')
+                ->where('request_type', 'minor')
+                ->latest()->get();
+
+            $pendingMajor = Requisition::with(['items', 'user'])
+                ->where('status', 'approved_president')
+                ->where('request_type', 'major')
+                ->latest()->get();
+
+            return view('admin.approvals', compact('pendingMinor', 'pendingMajor'));
+        }
+
+        // 3. For all other Bosses, keep existing logic
+        $pendingRequests = $query->latest()->get();
         return view('admin.approvals', compact('pendingRequests'));
     }
 
