@@ -90,13 +90,18 @@
                         <div class="mb-5 px-2">
                             <div class="tracking-stepper">
                                 <!-- Step 1 -->
-                                <div class="step-item completed">
+                                <div class="step-item completed" :class="selectedReq.status == 'pending' ? 'in-progress' : ''">
                                     <div class="step-icon"><i data-lucide="send"></i></div>
                                     <div class="step-label">Submitted</div>
                                 </div>
 
                                 <!-- Step 2: Dept Head -->
-                                <div class="step-item" :class="['approved_dept', 'approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'pending' ? 'active' : '')">
+                                <div class="step-item"
+                                    :class="{
+                                        'completed': ['approved_dept', 'approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status),
+                                        'active': selectedReq.status == 'pending',
+                                        'in-progress': selectedReq.status == 'approved_dept'
+                                    }">
                                     <div class="step-icon"><i data-lucide="user-check"></i></div>
                                     <div class="step-label">Dept Head</div>
                                 </div>

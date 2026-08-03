@@ -54,10 +54,13 @@
         .tracking-stepper {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             position: relative;
             width: 100%;
-            margin-bottom: 2rem;
+            margin: 0 auto 2rem auto;
+            padding: 20px 0;
+            /* This ensures it stays horizontal even on smaller screens */
+            flex-direction: row !important;
         }
 
         .step-item {
@@ -67,20 +70,23 @@
             flex-direction: column;
             align-items: center;
             z-index: 1;
+            min-width: 80px; /* Prevents icons from overlapping */
         }
 
         /* The Connecting Line */
         .step-item::after {
             content: "";
             position: absolute;
-            top: 20px; /* Centers the line vertically with the icon */
+            top: 20px; /* Half of the icon height (40px) */
             left: 50%;
             width: 100%;
             height: 3px;
             background-color: #e2e8f0;
             z-index: -1;
+            transition: all 0.5s ease;
         }
 
+        /* Hide the line for the last item */
         .step-item:last-child::after {
             display: none;
         }
@@ -95,7 +101,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             transition: all 0.3s ease;
         }
 
@@ -105,19 +111,18 @@
             color: #94a3b8;
         }
 
-        /* Completed State (Green) */
+        /*States*/
+
+        /* Completed (Green) */
         .step-item.completed .step-icon {
             background-color: var(--htc-green);
             border-color: var(--htc-green);
+            color: white !important;
         }
 
-        .step-item.completed .step-icon [data-lucide] {
-            color: white;
-        }
+        .step-item.completed .step-icon i { color: white !important; }
+        .step-item.completed::after { background-color: var(--htc-green); }
 
-        .step-item.completed::after {
-            background-color: var(--htc-green);
-        }
 
         /* Active State (Yellow/Current) */
         .step-item.active .step-icon {
@@ -126,22 +131,57 @@
             box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.1);
         }
 
-        .step-item.active .step-icon [data-lucide] {
+        /* Active (Yellow) */
+        .step-item.active .step-icon {
+            border-color: #ffc107;
             color: #ffc107;
+            box-shadow: 0 0 0 4px rgba(255, 193, 7, 0.2);
         }
 
         /* Labels */
         .step-label {
             font-size: 0.65rem;
-            font-weight: 700;
+            font-weight: 800;
             text-transform: uppercase;
             color: #94a3b8;
             letter-spacing: 0.5px;
             text-align: center;
+            max-width: 100px;
+            line-height: 1.2;
         }
 
-        .completed .step-label {
-            color: var(--htc-green);
+        .step-item.active .step-label { color: #856404; }
+
+        /* --- ANIMATION DEFINITIONS --- */
+        @keyframes lineFlow {
+            0% { background-position: 100% 0%; }
+            100% { background-position: -100% 0%; }
+        }
+
+        @keyframes pulseActive {
+            0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+        }
+
+        /* --- APPLYING TO THE STEPPER --- */
+
+        /* The 'Moving' Line */
+        .step-item.in-progress::after {
+            background: linear-gradient(90deg, var(--htc-green) 0%, #e2e8f0 50%, var(--htc-green) 100%);
+            background-size: 200% 100%;
+            animation: lineFlow 2s linear infinite;
+        }
+
+        /* Pulsing effect for the CURRENT step icon */
+        .step-item.active .step-icon {
+            border-color: #ffc107;
+            animation: pulseActive 2s infinite;
+        }
+
+        /* Smooth transition for when a step turns green */
+        .step-item .step-icon, .step-item::after {
+            transition: all 0.5s ease-in-out;
         }
     </style>
 </head>
