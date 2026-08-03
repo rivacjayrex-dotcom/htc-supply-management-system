@@ -169,7 +169,7 @@
                     </div>
                 </a>
 
-                @if(in_array(Auth::user()->role, ['dept_head', 'vp', 'provost', 'president']))
+                @if(in_array(Auth::user()->role, ['dept_head', 'vp_finance', 'vp_admin', 'provost', 'president']))
                     <div class="nav-section-label">Management</div>
                     <a href="{{ route('admin.approvals') }}" class="nav-link-custom {{ request()->routeIs('admin.approvals') ? 'active' : '' }}">
                         <i data-lucide="user-check"></i> Pending Approvals
@@ -210,7 +210,8 @@
                         $position = match(Auth::user()->role) {
                             'employee' => 'Faculty / Staff',
                             'dept_head' => 'Department Head',
-                            'vp' => 'Vice President',
+                            'vp_finance' => 'VP for Finance',
+                            'vp_admin' => 'VP for Administration',
                             'provost' => 'School Provost',
                             'president' => 'School President',
                             'smo' => 'SMO In-Charge',

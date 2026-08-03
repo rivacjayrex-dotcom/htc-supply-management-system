@@ -25,7 +25,7 @@
                             <th class="py-3">Requestor</th>
                             <th class="py-3">Department</th>
                             <th class="py-3">Items</th>
-                            <th class="py-3">Total Amount</th>
+                            <th class="py-3">Total</th>
                             <th class="pe-4 py-3 text-end">Action</th>
                         </tr>
                     </thead>
@@ -34,29 +34,29 @@
                             <tr>
                                 <td class="ps-4 fw-mono text-muted">#{{ $req->id }}</td>
                                 <td>
-                                    <div class="fw-bold text-dark">{{ $req->user->name }}</div>
-                                    <div class="small text-muted" style="font-size: 10px;">ID: {{ $req->user->school_id }}</div>
+                                    <div class="fw-bold text-dark">{{ $req->user->name ?? 'Unknown' }}</div>
+                                    <div class="small text-muted" style="font-size: 10px;">ID: {{ $req->user->school_id ?? 'N/A' }}</div>
                                 </td>
                                 <td>
                                     <span class="badge bg-light text-dark border px-2">{{ $req->user->department ?? 'General' }}</span>
                                 </td>
                                 <td>
-                                    <span class="fw-semibold">{{ $req->items->first()->item_name }}</span>
+                                    <span class="fw-semibold">{{ $req->items->first()->item_name ?? 'Item' }}</span>
                                     @if($req->items->count() > 1)
-                                        <span class="text-muted small"> (+{{ $req->items->count() - 1 }} others)</span>
+                                        <span class="text-muted small"> (+{{ $req->items->count() - 1 }} more)</span>
                                     @endif
                                 </td>
                                 <td class="fw-bold text-success">₱{{ number_format($req->grand_total, 2) }}</td>
                                 <td class="pe-4 text-end">
                                     <button class="btn btn-sm {{ Auth::user()->role == 'smo' ? 'btn-primary' : 'btn-htc' }} px-3 rounded-pill shadow-sm"
-                                            @click="openDetails({{ $req }}, {{ $req->items }}, '{{ $req->user->name }}', '{{ $req->user->department }}')">
+                                            @click="openDetails({{ $req }}, {{ $req->items }}, '{{ addslashes($req->user->name ?? 'Unknown') }}', '{{ $req->user->department ?? 'General' }}')">
                                         {{ Auth::user()->role == 'smo' ? 'Review & Release' : 'See More & Review' }}
                                     </button>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted italic">No pending requisitions for your approval.</td>
+                                <td colspan="6" class="text-center py-5 text-muted italic">No pending requisitions at this time.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -86,29 +86,28 @@
                             </div>
                         </div>
 
-                        <!-- TIMELINE (The Shopee-style bar inside the modal) -->
-                        <!-- DYNAMIC TIMELINE -->
+                        <!-- DYNAMIC TIMELINE (Alpine Only) -->
                         <div class="mb-5 px-2">
                             <div class="tracking-stepper">
-                                <!-- Step 1: Submission (Always there) -->
+                                <!-- Step 1 -->
                                 <div class="step-item completed">
                                     <div class="step-icon"><i data-lucide="send"></i></div>
                                     <div class="step-label">Submitted</div>
                                 </div>
 
-                                <!-- Step 2: Dept Head (Always there) -->
+                                <!-- Step 2: Dept Head -->
                                 <div class="step-item" :class="['approved_dept', 'approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'pending' ? 'active' : '')">
                                     <div class="step-icon"><i data-lucide="user-check"></i></div>
                                     <div class="step-label">Dept Head</div>
                                 </div>
 
-                                <!-- Step 3: VP (Always there - Finance for Minor, Admin for Major) -->
+                                <!-- Step 3: VP -->
                                 <div class="step-item" :class="['approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'approved_dept' ? 'active' : '')">
                                     <div class="step-icon"><i data-lucide="shield-check"></i></div>
                                     <div class="step-label" x-text="selectedReq.request_type == 'minor' ? 'VP Finance' : 'VP Admin'"></div>
                                 </div>
 
-                                <!-- Step 4: Provost (ONLY FOR MAJOR) -->
+                                <!-- Step 4: Provost (Major Only) -->
                                 <template x-if="selectedReq.request_type == 'major'">
                                     <div class="step-item" :class="['approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'approved_vp' ? 'active' : '')">
                                         <div class="step-icon"><i data-lucide="graduation-cap"></i></div>
@@ -116,7 +115,7 @@
                                     </div>
                                 </template>
 
-                                <!-- Step 5: President (ONLY FOR MAJOR) -->
+                                <!-- Step 5: President (Major Only) -->
                                 <template x-if="selectedReq.request_type == 'major'">
                                     <div class="step-item" :class="['approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'approved_provost' ? 'active' : '')">
                                         <div class="step-icon"><i data-lucide="award"></i></div>
@@ -124,7 +123,7 @@
                                     </div>
                                 </template>
 
-                                <!-- Step 6: Released (Always the final goal) -->
+                                <!-- Step 6: Released -->
                                 <div class="step-item" :class="selectedReq.status == 'released' ? 'completed' : ''">
                                     <div class="step-icon"><i data-lucide="package"></i></div>
                                     <div class="step-label">Released</div>
@@ -151,47 +150,38 @@
                                                 <small class="text-muted" x-text="item.specifications"></small>
                                             </td>
                                             <td x-text="item.quantity + ' ' + item.unit"></td>
-                                            <td class="text-end pe-3 fw-bold" x-text="'₱' + parseFloat(item.subtotal).toLocaleString()"></td>
+                                            <td class="text-end pe-3 fw-bold" x-text="'₱' + parseFloat(item.subtotal).toLocaleString(undefined, {minimumFractionDigits:2})"></td>
                                         </tr>
                                     </template>
                                 </tbody>
                                 <tfoot class="bg-light fw-bold">
                                     <tr>
                                         <td colspan="2" class="ps-3 text-uppercase small">Grand Total</td>
-                                        <td class="text-end pe-3 text-success" x-text="'₱' + parseFloat(selectedReq.grand_total).toLocaleString()"></td>
+                                        <td class="text-end pe-3 text-success" x-text="'₱' + parseFloat(selectedReq.grand_total).toLocaleString(undefined, {minimumFractionDigits:2})"></td>
                                     </tr>
                                 </tfoot>
                             </table>
                         </div>
 
-                        <!-- DECISION FORM -->
+                        <!-- ACTION FORMS -->
                         <div class="mt-4">
                             @if(Auth::user()->role == 'smo')
-                                <!-- SMO VIEW: RELEASE FORM -->
                                 <form :action="'{{ url('/admin/requests') }}/' + selectedReq.id + '/release'" method="POST">
                                     @csrf
-                                    <div class="alert bg-light border-0 small text-muted mb-3">
-                                        <i data-lucide="info" class="me-1" style="width: 12px;"></i>
-                                        By clicking Release, you confirm that the items above have been prepared and handed over to the requestor.
-                                    </div>
-
-                                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" style="border-radius: 12px;">
-                                        <i data-lucide="package-check" class="me-2" style="width: 18px; vertical-align: middle;"></i>
-                                        CONFIRM RELEASE & UPDATE INVENTORY
+                                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 shadow-sm">
+                                        <i data-lucide="package-check" class="me-2" style="width:18px; vertical-align:middle"></i> CONFIRM RELEASE
                                     </button>
                                 </form>
                             @else
-                                <!-- BOSS VIEW: APPROVAL/REJECTION FORM -->
                                 <form :action="'{{ url('/admin/requests') }}/' + selectedReq.id + '/status'" method="POST">
                                     @csrf
                                     <div class="mb-3">
-                                        <label class="form-label small fw-bold text-muted uppercase">Signatory Remarks (Optional)</label>
-                                        <textarea name="remarks" class="form-control border-0 bg-light rounded-3" rows="2" placeholder="Explain the reason for approval or rejection..."></textarea>
+                                        <label class="form-label small fw-bold text-muted uppercase">Signatory Remarks</label>
+                                        <textarea name="remarks" class="form-control border-0 bg-light rounded-3" rows="2" placeholder="Optional note..."></textarea>
                                     </div>
-
                                     <div class="d-flex gap-2">
-                                        <button name="status" value="rejected" class="btn btn-outline-danger fw-bold flex-grow-1 py-2" style="border-radius: 10px;">Reject Request</button>
-                                        <button name="status" value="approved" class="btn btn-success fw-bold flex-grow-1 py-2 shadow-sm" style="border-radius: 10px;">Approve Requisition</button>
+                                        <button name="status" value="rejected" class="btn btn-outline-danger fw-bold flex-grow-1 py-2 rounded-3">Reject</button>
+                                        <button name="status" value="approved" class="btn btn-success fw-bold flex-grow-1 py-2 shadow-sm rounded-3">Approve</button>
                                     </div>
                                 </form>
                             @endif
@@ -218,8 +208,7 @@
                     const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
                     modal.show();
 
-                    // Re-render icons inside modal
-                    setTimeout(() => lucide.createIcons(), 100);
+                    setTimeout(() => lucide.createIcons(), 150);
                 }
             }
         }

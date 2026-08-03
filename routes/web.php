@@ -86,7 +86,7 @@ Route::get('/dashboard', function () {
     require __DIR__.'/auth.php';
 
     // ADMIN APPROVAL ROUTES
-    Route::middleware(['auth', 'role:dept_head,vp,provost,president,smo'])->group(function () {
+    Route::middleware(['auth', 'role:dept_head,vp_finance,vp_admin,provost,president,smo'])->group(function () {
         Route::get('/admin/approvals', [RequestController::class, 'adminIndex'])->name('admin.approvals');
         Route::post('/admin/requests/{id}/status', [RequestController::class, 'updateStatus'])->name('admin.status.update');
         Route::post('/admin/requests/{id}/release', [RequestController::class, 'releaseRequest'])->name('admin.requests.release');
@@ -96,6 +96,7 @@ Route::get('/dashboard', function () {
 
     // Change the submission route to point to the new Requisition Controller
     Route::post('/requisitions', [RequisitionController::class, 'store'])->name('requisitions.store');
+
 
     Route::get('/requests/{id}/download', [RequestController::class, 'downloadPDF'])->name('requests.download');
 
