@@ -3,19 +3,61 @@
         {{ __('Procurement History') }}
     </x-slot>
 
-    <div class="container py-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h4 class="fw-bold mb-0">Requisition Logs</h4>
-                <p class="text-muted small">Track the status and lifecycle of your supply requests.</p>
+    <div class="container-fluid py-2">
+
+        <!-- SMO ANALYTICS BAR (Only visible to SMO) -->
+        @if(Auth::user()->role == 'smo')
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="p-3 rounded-circle bg-success-subtle text-success me-3">
+                                <i data-lucide="check-check"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted small mb-1">Total Released</h6>
+                                <h4 class="fw-bold mb-0">{{ $requests->where('status', 'released')->count() }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="p-3 rounded-circle bg-primary-subtle text-primary me-3">
+                                <i data-lucide="package"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted small mb-1">Active Requisitions</h6>
+                                <h4 class="fw-bold mb-0">{{ $requests->whereNotIn('status', ['released', 'rejected'])->count() }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                        <div class="d-flex align-items-center">
+                            <div class="p-3 rounded-circle bg-info-subtle text-info me-3">
+                                <i data-lucide="banknote"></i>
+                            </div>
+                            <div>
+                                <h6 class="text-muted small mb-1">Total Distributed Value</h6>
+                                <h4 class="fw-bold mb-0">₱{{ number_format($requests->where('status', 'released')->sum('grand_total'), 2) }}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0">Institutional Requisition History</h5>
+                <button onclick="window.print()" class="btn btn-sm btn-outline-dark px-3 rounded-pill">
+                    <i data-lucide="printer" class="me-1" style="width:14px"></i> Export Report
+                </button>
             </div>
 
-            @if(Auth::user()->isSMO())
-                <button onclick="window.print()" class="btn btn-outline-dark btn-sm fw-bold">
-                    🖨️ Print Summary Report
-                </button>
-            @endif
-        </div>
 
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="table-responsive">

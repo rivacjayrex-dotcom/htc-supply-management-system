@@ -1,71 +1,110 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Supply Request Form</title>
+    <meta charset="utf-8">
+    <title>HTC Requisition Slip #{{ $request->id }}</title>
     <style>
-        body { font-family: sans-serif; font-size: 12px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .school-name { font-size: 18px; font-bold: bold; color: #144521; }
-        .doc-title { font-size: 14px; text-decoration: underline; margin-top: 10px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        .footer { margin-top: 50px; }
-        .sig-box { width: 30%; display: inline-block; text-align: center; margin-right: 3%; }
-        .sig-line { border-top: 1px solid black; margin-top: 40px; }
+        body { font-family: 'Helvetica', sans-serif; color: #333; line-height: 1.5; font-size: 12px; }
+        .header-table { width: 100%; border-bottom: 2px solid #185b3b; padding-bottom: 10px; margin-bottom: 20px; }
+        .school-name { font-size: 18px; font-weight: bold; color: #185b3b; }
+        .doc-type { background: #185b3b; color: white; padding: 5px 15px; display: inline-block; font-weight: bold; margin-top: 10px; }
+
+        .info-section { width: 100%; margin-bottom: 20px; }
+        .info-box { width: 48%; display: inline-block; vertical-align: top; }
+
+        table.items-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        table.items-table th { background: #f8f9fa; border: 1px solid #dee2e6; padding: 10px; text-align: left; text-transform: uppercase; font-size: 10px; }
+        table.items-table td { border: 1px solid #dee2e6; padding: 10px; }
+
+        .signature-section { width: 100%; margin-top: 40px; }
+        .sig-box { width: 30%; display: inline-block; text-align: center; font-size: 10px; }
+        .sig-line { border-top: 1px solid #000; width: 80%; margin: 40px auto 5px auto; }
+        .digital-stamp { color: #185b3b; font-weight: bold; font-style: italic; font-size: 9px; }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="school-name">HOLY TRINITY COLLEGE OF GENERAL SANTOS CITY</div>
-        <div>Supply Management Office (SMO)</div>
-        <div class="doc-title">REQUISITION AND ISSUE SLIP</div>
+    <table class="header-table">
+        <tr>
+            <td width="70">
+                <!-- If you have the logo in your public/images folder, use this path -->
+                <img src="{{ public_path('images/android-chrome-512x5122.png') }}" width="60">
+            </td>
+            <td>
+                <div class="school-name">HOLY TRINITY COLLEGE OF GENERAL SANTOS CITY</div>
+                <div>Supply Management Office (SMO)</div>
+                <div class="doc-type">REQUISITION AND ISSUE SLIP (RIS)</div>
+            </td>
+            <td align="right" valign="top">
+                <strong>No: {{ str_pad($request->id, 6, '0', STR_PAD_LEFT) }}</strong><br>
+                Date: {{ $request->created_at->format('M d, Y') }}
+            </td>
+        </tr>
+    </table>
+
+    <div class="info-section">
+        <div class="info-box">
+            <strong>REQUESTOR DETAILS:</strong><br>
+            Name: {{ $request->user->name }}<br>
+            Department: {{ $request->user->department ?? 'General' }}<br>
+            School ID: {{ $request->user->school_id }}
+        </div>
+        <div class="info-box" align="right">
+            <strong>REQUISITION TIER:</strong><br>
+            <span style="text-transform: uppercase;">{{ $request->request_type }}</span><br>
+            Status: {{ strtoupper($request->status) }}
+        </div>
     </div>
 
-    <p><strong>Request ID:</strong> #{{ $request->id }}</p>
-    <p><strong>Date:</strong> {{ $request->created_at->format('M d, Y') }}</p>
-    <p><strong>Requestor:</strong> {{ $request->user->name }} (ID: {{ $request->user->school_id }})</p>
-
-    <table>
+    <table class="items-table">
         <thead>
-            <tr style="background-color: #f2f2f2;">
-                <th>Item Name & Specifications</th>
-                <th>Qty</th>
+            <tr>
+                <th>Item Description & Specifications</th>
+                <th>Quantity</th>
                 <th>Unit</th>
-                <th>Unit Price</th>
-                <th>Total</th>
+                <th align="right">Amount</th>
             </tr>
         </thead>
         <tbody>
+            @foreach($request->items as $item)
             <tr>
-                <td><strong>{{ $request->item_name }}</strong><br>{{ $request->specifications }}</td>
-                <td>{{ $request->quantity }}</td>
-                <td>{{ $request->unit }}</td>
-                <td>₱{{ number_format($request->unit_price, 2) }}</td>
-                <td>₱{{ number_format($request->total_amount, 2) }}</td>
+                <td>
+                    <strong>{{ $item->item_name }}</strong><br>
+                    <small>{{ $item->specifications }}</small>
+                </td>
+                <td>{{ $item->quantity }}</td>
+                <td>{{ $item->unit }}</td>
+                <td align="right">₱{{ number_format($item->subtotal, 2) }}</td>
             </tr>
+            @endforeach
         </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" align="right"><strong>GRAND TOTAL</strong></td>
+                <td align="right" style="color: #185b3b;"><strong>₱{{ number_format($request->grand_total, 2) }}</strong></td>
+            </tr>
+        </tfoot>
     </table>
 
-    <div class="footer">
-        <p><strong>APPROVAL WORKFLOW:</strong></p>
-
+    <div class="signature-section">
         <div class="sig-box">
             <div class="sig-line"></div>
             <div>Dept. Head / Adviser</div>
-            <small style="color: green;">{{ $request->status != 'pending' ? 'DIGITALLY SIGNED' : '' }}</small>
+            <div class="digital-stamp">{{ in_array($request->status, ['approved_dept', 'approved_vp', 'approved_provost', 'approved_president', 'released']) ? '✓ DIGITALLY SIGNED' : '' }}</div>
         </div>
-
         <div class="sig-box">
             <div class="sig-line"></div>
-            <div>VP for Finance/Admin</div>
-            <small style="color: green;">{{ str_contains($request->status, 'approved_vp') ? 'DIGITALLY SIGNED' : '' }}</small>
+            <div>{{ $request->request_type == 'minor' ? 'VP for Finance' : 'VP for Admin' }}</div>
+            <div class="digital-stamp">{{ in_array($request->status, ['approved_vp', 'approved_provost', 'approved_president', 'released']) ? '✓ DIGITALLY SIGNED' : '' }}</div>
         </div>
-
         <div class="sig-box">
             <div class="sig-line"></div>
-            <div>School President</div>
-            <small style="color: green;">{{ $request->status == 'approved_president' || $request->status == 'released' ? 'DIGITALLY SIGNED' : '' }}</small>
+            <div>{{ $request->request_type == 'minor' ? 'SMO Receipt' : 'School President' }}</div>
+            <div class="digital-stamp">{{ in_array($request->status, ['approved_president', 'released']) ? '✓ DIGITALLY SIGNED' : '' }}</div>
         </div>
+    </div>
+
+    <div style="margin-top: 30px; border: 1px dashed #ccc; padding: 10px; font-size: 10px; text-align: center;">
+        This is a system-generated document from the HTC Web-Based Integrated Supply Management System.
     </div>
 </body>
 </html>
