@@ -23,7 +23,7 @@
         :root {
             --htc-green: #185b3b;
             --htc-light-green: #f0f7f1;
-            --sidebar-width: 300px;
+            --sidebar-width: 275px;
         }
 
         body { background-color: #f4f7f6; font-family: 'Inter', sans-serif; color: #334155; }
@@ -51,7 +51,36 @@
         .btn-new-request { background-color: var(--htc-green); color: white; border-radius: 12px; padding: 0.8rem; font-weight: 700; border: none; transition: all 0.3s ease; }
         .btn-new-request:hover { background-color: #0d2e16; color: white; transform: translateY(-2px); }
 
-        .dropdown-menu { z-index: 1050 !important; border-radius: 15px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.1) !important; }
+        .dropdown-menu {
+            display: block; /* Required for transition to work */
+            visibility: hidden;
+            opacity: 0;
+            transform: translateY(15px); /* Starts 15px lower */
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Professional easing */
+            pointer-events: none; /* Prevents clicking while hidden */
+            border: none !important;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important;
+        }
+
+        .dropdown-menu.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translateY(0); /* Slides up to its spot */
+            pointer-events: auto;
+        }
+
+        /* Optional: Add a hover effect to the items inside */
+        .dropdown-item {
+            transition: all 0.2s ease;
+            padding: 0.6rem 1rem;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--htc-light-green);
+            color: var(--htc-green);
+            transform: translateX(5px); /* Subtle slide to the right */
+        }
+
 
         /* --- UNIVERSAL STEPPER (Shopee-style) --- */
         .tracking-stepper {
@@ -411,12 +440,22 @@
                             </div>
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end p-2 mt-2">
-                            <li><a class="dropdown-item rounded-3 py-2 small" href="{{ route('profile.edit') }}"><i data-lucide="settings" class="me-2" style="width:14px"></i> Account Setting</a></li>
-                            <li><hr class="dropdown-divider"></li>
+                            <div class="px-3 py-2 mb-2 border-bottom d-lg-none">
+                                <div class="fw-bold">{{ Auth::user()->name }}</div>
+                                <small class="text-muted">{{ Auth::user()->role }}</small>
+                            </div>
+                            <li>
+                                <a class="dropdown-item rounded-3 small d-flex align-items-center" href="{{ route('profile.edit') }}">
+                                    <i data-lucide="settings" class="me-2 text-muted" style="width:14px"></i> Account Setting
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider opacity-50"></li>
                             <li>
                                 <form method="POST" action="{{ route('logout') }}">
                                     @csrf
-                                    <button type="submit" class="dropdown-item text-danger rounded-3 py-2 small"><i data-lucide="log-out" class="me-2" style="width:14px"></i> Sign Out</button>
+                                    <button type="submit" class="dropdown-item text-danger rounded-3 small d-flex align-items-center">
+                                        <i data-lucide="log-out" class="me-2" style="width:14px"></i> Sign Out
+                                    </button>
                                 </form>
                             </li>
                         </ul>
