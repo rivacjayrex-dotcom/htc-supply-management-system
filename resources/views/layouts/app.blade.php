@@ -389,7 +389,7 @@
                     <i data-lucide="layout-dashboard"></i> Dashboard
                 </a>
                 <a href="{{ route('requests.index') }}" class="nav-link-custom {{ request()->routeIs('requests.index') ? 'active' : '' }}">
-                    <i data-lucide="clipboard-list"></i> My Requests
+                    <i data-lucide="clipboard-list"></i> Requests
                 </a>
                 <a href="{{ route('notifications') }}" class="nav-link-custom {{ request()->routeIs('notifications') ? 'active' : '' }}">
                     <div class="d-flex justify-content-between align-items-center w-100">

@@ -19,19 +19,21 @@ class RequestController extends Controller
     {
         $user = Auth::user();
 
-        // 1. Define the base query (Eager load items and user)
+        // 1. Start the query with relationships loaded
         $query = \App\Models\Requisition::with(['items', 'user']);
 
-        // 2. Filter by user if they are an Employee
-        if ($user->role == 'employee') {
+        // 2. PRIVACY FILTER:
+        // If NOT SMO, only show records belonging to the logged-in user
+        if ($user->role !== 'smo') {
             $query->where('user_id', $user->id);
         }
+        // If user is SMO, the query remains unfiltered (sees everyone)
 
-        // 3. Split into Active and Completed
-        $allRequests = $query->latest()->get();
+        // 3. Fetch data and split into the two vertical sections
+        $all = $query->latest()->get();
 
-        $activeRequests = $allRequests->whereNotIn('status', ['released', 'rejected']);
-        $completedRequests = $allRequests->whereIn('status', ['released', 'rejected']);
+        $activeRequests = $all->whereNotIn('status', ['released', 'rejected']);
+        $completedRequests = $all->whereIn('status', ['released', 'rejected']);
 
         return view('requests.index', compact('activeRequests', 'completedRequests'));
     }
