@@ -128,6 +128,15 @@ class RequestController extends Controller
             $request->status == 'approved' ? 'success' : 'danger'
         );
 
+        $sr->save();
+
+        \App\Models\ApprovalLog::create([
+            'requisition_id' => $sr->id,
+            'action' => ($request->status == 'approved' ? 'Approved' : 'Rejected') . ' by ' . $position,
+            'role' => $role,
+            'remarks' => $request->remarks
+        ]);
+
         return redirect()->route('admin.approvals')->with('success', 'Status updated successfully.');
     }
 
@@ -193,7 +202,7 @@ class RequestController extends Controller
 
     public function show($id)
     {
-        $request = Requisition::with(['items', 'user'])->findOrFail($id);
+        $request = Requisition::with(['user', 'items', 'logs'])->findOrFail($id);
         return view('requests.show', compact('request'));
     }
 

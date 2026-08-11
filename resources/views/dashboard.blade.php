@@ -14,6 +14,10 @@
             <!-- SMO IN-CHARGE VIEW -->
             <!-- ============================================================== -->
 
+            <div class="mb-4 animate__animated animate__fadeIn">
+                <p class="text-muted small">Here is an overview of your activities.</p>
+            </div>
+
             <!-- ROW 1: CORE METRICS -->
             <div class="row g-3 mb-4">
                 <!-- Total Requests -->

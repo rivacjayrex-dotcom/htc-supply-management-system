@@ -15,6 +15,10 @@ class Requisition extends Model
     public function user() {
         return $this->belongsTo(User::class);
     }
+
+    public function logs() {
+    return $this->hasMany(ApprovalLog::class);
+}
 }
 
 
