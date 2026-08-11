@@ -6,6 +6,9 @@
     <title>{{ config('app.name') }}</title>
     <link rel="icon" type="image/png" href="{{ asset('images/favicon-32x32.png') }}">
 
+    <!-- Animate.css for entrance animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Bootstrap 5 -->
@@ -39,11 +42,11 @@
 
         /* Main Content & Top Bar */
         .main-content { margin-left: var(--sidebar-width); width: calc(100% - var(--sidebar-width)); }
-        .top-bar { height: 80px; background: white; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; position: sticky; top: 0; z-index: 1010; }
-        .page-title { font-weight: 800; font-size: 1.3rem; color: var(--htc-green); }
+        .top-bar { height: 80px; background: var(--htc-green); border-bottom: 1px solid #fff5f5; display: flex; align-items: center; justify-content: space-between; padding: 0 2.5rem; position: sticky; top: 0; z-index: 1010; }
+        .page-title { font-weight: 800; font-size: 1.3rem; color: white; }
 
-        .role-badge { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 5px 12px; border-radius: 20px; background-color: var(--htc-light-green); color: var(--htc-green); margin-right: 15px; border: 1px solid rgba(24, 91, 59, 0.1); }
-        .main-content-inner { background: white; border-radius: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); min-height: calc(100vh - 160px); border: 1px solid #e2e8f0; }
+        .role-badge { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; padding: 5px 12px; border-radius: 20px; background-color: var(--htc-light-green); color: var(--htc-green); margin-right: 15px; border: 1px solid rgba(14, 41, 21, 0.885); }
+        .main-content-inner { background: white; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); min-height: calc(100vh - 160px); border: 1px solid #e2e8f0; }
 
         .btn-new-request { background-color: var(--htc-green); color: white; border-radius: 12px; padding: 0.8rem; font-weight: 700; border: none; transition: all 0.3s ease; }
         .btn-new-request:hover { background-color: #0d2e16; color: white; transform: translateY(-2px); }
@@ -395,11 +398,11 @@
                     <div class="dropdown">
                         <button class="btn border-0 d-flex align-items-center p-2 rounded-3" type="button" data-bs-toggle="dropdown">
                             <div class="text-end me-3 d-none d-lg-block">
-                                <div class="fw-bold small text-dark" style="line-height: 1;">{{ Auth::user()->name }}</div>
-                                <small class="text-muted" style="font-size: 10px;">{{ Auth::user()->school_id }}</small>
+                                <div class="fw-bold small text-white" style="line-height: 1;">{{ Auth::user()->name }}</div>
+                                <small class="text-white opacity-75" style="font-size: 10px;">{{ Auth::user()->school_id }}</small>
                             </div>
-                            <div class="rounded-circle d-flex align-items-center justify-content-center font-bold text-white shadow-sm overflow-hidden"
-                                style="width: 40px; height: 40px; background-color: var(--htc-green);">
+                            <div class="rounded-circle d-flex align-items-center justify-content-center font-bold text-black shadow-sm overflow-hidden"
+                                style="width: 40px; height: 40px; background-color: white;">
                                 @if(Auth::user()->profile_photo)
                                     <img src="{{ asset('storage/' . Auth::user()->profile_photo) }}" style="width: 100%; height: 100%; object-fit: cover;">
                                 @else
@@ -421,8 +424,8 @@
                 </div>
             </header>
 
-            <div class="p-4 p-lg-5">
-                <div class="main-content-inner p-4 p-md-5">
+            <div class="p-1 p-lg-3">
+                <div class="main-content-inner p-3 p-md-4">
                     {{ $slot }}
                 </div>
             </div>
@@ -627,6 +630,26 @@
                 alpine.view = 'selection';
                 alpine.cart = [{ name: '', specs: '', qty: 1, unit: 'pc', price: 0 }];
             })
+
+        function countUp(target, duration = 1000) {
+            return {
+                current: 0,
+                target: target,
+                init() {
+                    let start = 0;
+                    const increment = this.target / (duration / 16);
+                    const timer = setInterval(() => {
+                        start += increment;
+                        if (start >= this.target) {
+                            this.current = this.target;
+                            clearInterval(timer);
+                        } else {
+                            this.current = Math.floor(start);
+                        }
+                    }, 16);
+                }
+            }
+        }
     </script>
 </body>
 </html>
