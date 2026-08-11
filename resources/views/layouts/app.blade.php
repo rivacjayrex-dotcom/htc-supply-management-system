@@ -261,6 +261,60 @@
         #smoTabs .badge {
             background-color: rgba(255, 255, 255, 0.2) !important;
         }
+
+
+
+        /* --- PROCUREMENT ENGINE STYLES --- */
+        .selection-card {
+            background: white;
+            border: 2px solid #f1f5f9;
+            padding: 2.5rem 1.5rem;
+            border-radius: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .selection-card i { width: 50px; height: 50px; transition: all 0.3s ease; }
+        .selection-card h4 { font-weight: 800; margin-top: 1rem; color: #1e293b; }
+        .selection-card p { font-size: 0.85rem; color: #64748b; margin-bottom: 0; }
+
+        .selection-card.minor:hover { border-color: #10b981; background: #f0fdf4; transform: translateY(-10px); }
+        .selection-card.major:hover { border-color: #f59e0b; background: #fffbeb; transform: translateY(-10px); }
+
+        .selection-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 9px;
+            font-weight: 800;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: #f1f5f9;
+            color: #94a3b8;
+        }
+
+        .selection-card.minor:hover .selection-badge { background: #10b981; color: white; }
+        .selection-card.major:hover .selection-badge { background: #f59e0b; color: white; }
+
+        .mini-label { font-size: 9px; font-weight: 800; text-transform: uppercase; color: #94a3b8; letter-spacing: 0.5px; margin-bottom: 4px; }
+
+        .summary-stat { display: flex; justify-content: space-between; font-size: 0.85rem; color: #64748b; }
+
+        .btn-outline-dashed {
+            border: 2px dashed #e2e8f0;
+            color: #94a3b8;
+            transition: all 0.3s;
+        }
+        .btn-outline-dashed:hover {
+            border-color: var(--htc-green);
+            color: var(--htc-green);
+            background: var(--htc-light-green);
+        }
+
+        .footer-note { font-size: 10px; font-weight: bold; margin-top: 20px; opacity: 0.5; }
     </style>
 </head>
 <body>
@@ -375,132 +429,147 @@
         </main>
     </div>
 
-    <!-- GLOBAL REQUEST MODAL -->
+    <!-- GLOBAL REQUISITION ENGINE -->
     <div class="modal fade" id="globalRequestModal" tabindex="-1" aria-hidden="true"
-        x-data="{
-            tier: 'minor',
-            view: 'selection',
-            cart: [{ name: '', specs: '', qty: 1, unit: 'pc', price: 0 }],
-            addItem() {
-                this.cart.push({ name: '', specs: '', qty: 1, unit: 'pc', price: 0 });
-                setTimeout(() => lucide.createIcons(), 10);
-            },
-            removeItem(index) {
-                if(this.cart.length > 1) this.cart.splice(index, 1);
-            },
-            get grandTotal() {
-                return this.cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
-            },
-            formatMoney(val) {
-                return parseFloat(val || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-            }
-        }">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+        x-data="cartSystem()"
+        @hidden-bs-modal.window="resetModal()">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-2xl rounded-4 overflow-hidden">
 
-                <!-- VIEW 1: TIER SELECTION (Redesigned) -->
-                <div x-show="view === 'selection'" class="p-5">
-                    <div class="text-center mb-5">
-                        <h3 class="fw-bold text-dark">Initialize Procurement</h3>
-                        <p class="text-muted mx-auto" style="max-width: 400px;">Select the appropriate requisition tier. Note that Major requests require additional administrative signatures.</p>
+                <!-- MODAL HEADER: DYNAMIC ACCENT -->
+                <div class="p-4 d-flex justify-content-between align-items-center border-bottom"
+                    :class="tier === 'major' ? 'bg-warning-subtle' : 'bg-success-subtle'">
+                    <div class="d-flex align-items-center">
+                        <div class="p-2 rounded-3 me-3" :class="tier === 'major' ? 'bg-warning text-white' : 'bg-success text-white'">
+                            <i :data-lucide="tier === 'major' ? 'shield-alert' : 'zap'" style="width: 20px;"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold mb-0 text-dark">Institutional Requisition</h5>
+                            <span class="small fw-bold opacity-75 uppercase tracking-widest" x-text="view === 'selection' ? 'Select Priority' : tier + ' Tier Active'"></span>
+                        </div>
                     </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
+                <!-- VIEW 1: SELECTION (Modern Grid) -->
+                <div x-show="view === 'selection'" x-transition class="p-5">
                     <div class="row g-4 justify-content-center">
-                        <!-- Minor Request Card -->
-                        <div class="col-md-6">
-                            <div class="procurement-card" @click="tier = 'minor'; view = 'form'; setTimeout(() => lucide.createIcons(), 10);">
-                                <div class="card-icon-wrapper bg-success-subtle text-success">
-                                    <i data-lucide="package" style="width: 32px; height: 32px;"></i>
-                                </div>
-                                <div class="card-content">
-                                    <h5 class="fw-bold mb-1">Minor Request</h5>
-                                    <p class="text-muted small mb-0">< 1,000.00</p>
-                                    <p class="text-muted small mb-0">Standard office supplies, stationeries, and low-value routine items.</p>
-                                </div>
-                                <div class="card-arrow">
-                                    <i data-lucide="chevron-right"></i>
-                                </div>
+                        <div class="col-md-5">
+                            <div class="selection-card minor" @click="setTier('minor')">
+                                <div class="selection-badge">FAST TRACK</div>
+                                <i data-lucide="package-search" class="mb-3"></i>
+                                <h4>Minor Request</h4>
+                                <p>For standard office supplies and low-value consumables.</p>
+                                <div class="footer-note">Approval: Dept Head & VP Finance</div>
                             </div>
                         </div>
-
-                        <!-- Major Request Card -->
-                        <div class="col-md-6">
-                            <div class="procurement-card" @click="tier = 'major'; view = 'form'; setTimeout(() => lucide.createIcons(), 10);">
-                                <div class="card-icon-wrapper bg-warning-subtle text-warning">
-                                    <i data-lucide="landmark" style="width: 32px; height: 32px;"></i>
-                                </div>
-                                <div class="card-content">
-                                    <h5 class="fw-bold mb-1">Major Request</h5>
-                                    <p class="text-muted small mb-0">> 1,000.00</p>
-                                    <p class="text-muted small mb-0">High-value equipment, IT infrastructure, and bulk institutional orders.</p>
-                                </div>
-                                <div class="card-arrow">
-                                    <i data-lucide="chevron-right"></i>
-                                </div>
+                        <div class="col-md-5">
+                            <div class="selection-card major" @click="setTier('major')">
+                                <div class="selection-badge">HIGH PRIORITY</div>
+                                <i data-lucide="building-2" class="mb-3"></i>
+                                <h4>Major Request</h4>
+                                <p>For high-value equipment, IT hardware, and bulk orders.</p>
+                                <div class="footer-note">Full Administrative Chain Required</div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-            <div class="text-center mt-5">
-                <button type="button" class="btn btn-link text-muted text-decoration-none small" data-bs-dismiss="modal">
-                    Cancel and close
-                </button>
-            </div>
-        </div>
+                <!-- VIEW 2: DYNAMIC FORM -->
+                <div x-show="view === 'form'" x-transition class="p-0 h-100" x-cloak>
+                    <div class="row g-0">
+                        <!-- LEFT: Form Area -->
+                        <div class="col-lg-8 p-4 border-end" style="background: #fafbfc; max-height: 600px; overflow-y: auto;">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <button @click="view = 'selection'" class="btn btn-sm btn-light rounded-pill border px-3">
+                                    <i data-lucide="chevron-left" class="me-1" style="width:14px"></i> Switch Tier
+                                </button>
+                                <span class="small text-muted fw-bold uppercase">Item Entry Log</span>
+                            </div>
 
-                <!-- VIEW 2: THE ACTUAL FORM -->
-                <div x-show="view === 'form'" class="p-4" x-cloak>
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <button type="button" class="btn btn-sm btn-light rounded-pill px-3" @click="view = 'selection'">← Back</button>
-                        <!-- TIER TITLE UPDATES AUTOMATICALLY -->
-                        <h5 class="fw-bold m-0 text-uppercase"><span x-text="tier"></span> Requisition</h5>
-                        <div class="fw-bold text-success">₱<span x-text="formatMoney(grandTotal)"></span></div>
-                    </div>
-
-                    <form action="{{ route('requisitions.store') }}" method="POST">
-                        @csrf
-                        <!-- CRUCIAL: This hidden input is now bound to the Alpine tier variable -->
-                        <input type="hidden" name="request_type" :value="tier">
-
-                        <div class="table-responsive mb-3" style="max-height: 350px;">
-                            <table class="table table-sm align-middle">
-                                <thead class="bg-light small fw-bold">
-                                    <tr>
-                                        <th width="45%">Item Details</th>
-                                        <th width="20%">Qty / Unit</th>
-                                        <th width="20%">Price</th>
-                                        <th width="15%" class="text-end">Total</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <template x-for="(item, index) in cart" :key="index">
-                                        <tr>
-                                            <td>
-                                                <input type="text" :name="'items['+index+'][name]'" x-model="item.name" class="form-control form-control-sm border-0 bg-light mb-1" placeholder="Item name" required>
-                                                <input type="text" :name="'items['+index+'][specs]'" x-model="item.specs" class="form-control form-control-sm border-0 bg-light" style="font-size: 10px" placeholder="Specifications">
-                                            </td>
-                                            <td>
-                                                <div class="input-group input-group-sm">
-                                                    <input type="number" :name="'items['+index+'][qty]'" x-model.number="item.qty" class="form-control border-0 bg-light" min="1" required>
-                                                    <input type="text" :name="'items['+index+'][unit]'" x-model="item.unit" class="form-control border-0 bg-light border-start" placeholder="unit" required>
+                            <template x-for="(item, index) in cart" :key="index">
+                                <div class="card border-0 shadow-sm rounded-4 mb-3 requisition-item-row p-3">
+                                    <div class="row g-3">
+                                        <div class="col-md-7">
+                                            <label class="form-label mini-label">Description & Specs</label>
+                                            <input type="text" x-model="item.name" class="form-control form-control-sm border-0 bg-light mb-2 fw-bold" placeholder="Item Name (e.g. Epson Ink 003)">
+                                            <textarea x-model="item.specs" class="form-control form-control-sm border-0 bg-light" rows="1" placeholder="Technical Specifications..."></textarea>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <div class="row g-2">
+                                                <div class="col-6">
+                                                    <label class="form-label mini-label">Quantity</label>
+                                                    <div class="input-group input-group-sm">
+                                                        <input type="number" x-model.number="item.qty" class="form-control border-0 bg-light text-center" min="1">
+                                                        <input type="text" x-model="item.unit" class="form-control border-0 bg-light text-muted w-25" placeholder="pc">
+                                                    </div>
                                                 </div>
-                                            </td>
-                                            <td><input type="number" :name="'items['+index+'][price]'" x-model.number="item.price" step="0.01" class="form-control form-control-sm border-0 bg-light" required></td>
-                                            <td class="text-end fw-bold small text-success">₱<span x-text="formatMoney(item.qty * item.price)"></span></td>
-                                            <td>
-                                                <button type="button" @click="removeItem(index)" class="btn btn-sm text-danger" x-show="cart.length > 1">
-                                                    <i data-lucide="trash-2" style="width:14px"></i>
+                                                <div class="col-6 text-end">
+                                                    <label class="form-label mini-label">Est. Price</label>
+                                                    <input type="number" x-model.number="item.price" class="form-control form-control-sm border-0 bg-light text-end fw-bold" step="0.01">
+                                                </div>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                                <button @click="removeItem(index)" class="btn btn-sm text-danger opacity-50 hover-opacity-100" x-show="cart.length > 1">
+                                                    <i data-lucide="trash-2" style="width:14px"></i> Remove
                                                 </button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                            </table>
+                                                <div class="fw-bold text-success small">Subtotal: ₱<span x-text="formatMoney(item.qty * item.price)"></span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </template>
+
+                            <button @click="addItem()" class="btn btn-outline-dashed w-100 py-3 rounded-4 mt-2">
+                                <i data-lucide="plus-circle" class="me-2"></i> Add Another Item to this Requisition
+                            </button>
                         </div>
-                        <button type="button" @click="addItem()" class="btn btn-outline-success btn-sm w-100 mb-4 fw-bold">+ Add Another Item</button>
-                        <button type="submit" class="btn btn-lg w-100 text-white fw-bold shadow-sm" style="background-color: var(--htc-green);">Submit Requisition</button>
-                    </form>
+
+                        <!-- RIGHT: Summary Sidebar -->
+                        <div class="col-lg-4 p-4 bg-white">
+                            <div class="requisition-summary-box">
+                                <h6 class="fw-bold text-dark mb-4">Requisition Summary</h6>
+
+                                <div class="summary-stat mb-3">
+                                    <span>Total Line Items</span>
+                                    <strong x-text="cart.length"></strong>
+                                </div>
+                                <div class="summary-stat mb-3">
+                                    <span>Selected Tier</span>
+                                    <strong class="text-uppercase text-primary" x-text="tier"></strong>
+                                </div>
+
+                                <hr class="my-4">
+
+                                <div class="text-center py-3">
+                                    <small class="text-muted uppercase fw-bold d-block mb-1">Estimated Grand Total</small>
+                                    <h2 class="fw-black text-success mb-0">₱<span x-text="formatMoney(grandTotal)"></span></h2>
+                                </div>
+
+                                <form action="{{ route('requisitions.store') }}" method="POST" class="mt-4">
+                                    @csrf
+                                    <input type="hidden" name="request_type" :value="tier">
+                                    <!-- Multi-item hidden fields generated by Alpine -->
+                                    <template x-for="(item, index) in cart">
+                                        <div>
+                                            <input type="hidden" :name="'items['+index+'][name]'" :value="item.name">
+                                            <input type="hidden" :name="'items['+index+'][specs]'" :value="item.specs">
+                                            <input type="hidden" :name="'items['+index+'][qty]'" :value="item.qty">
+                                            <input type="hidden" :name="'items['+index+'][unit]'" :value="item.unit">
+                                            <input type="hidden" :name="'items['+index+'][price]'" :value="item.price">
+                                        </div>
+                                    </template>
+
+                                    <button type="submit" class="btn btn-success w-100 py-3 rounded-3 fw-bold shadow-lg shadow-success-subtle">
+                                        SUBMIT FOR APPROVAL
+                                    </button>
+                                    <p class="text-center text-muted small mt-3" style="font-size: 10px;">
+                                        By submitting, you agree to HTC Procurement policies and record accuracy standards.
+                                    </p>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -516,11 +585,37 @@
         function cartSystem() {
             return {
                 tier: 'minor',
+                view: 'selection',
                 cart: [{ name: '', specs: '', qty: 1, unit: 'pc', price: 0 }],
-                addItem() { this.cart.push({ name: '', specs: '', qty: 1, unit: 'pc', price: 0 }); setTimeout(() => lucide.createIcons(), 10); },
-                removeItem(index) { if(this.cart.length > 1) this.cart.splice(index, 1); },
-                get grandTotal() { return this.cart.reduce((sum, item) => sum + (item.qty * item.price), 0); },
-                formatMoney(val) { return parseFloat(val || 0).toLocaleString(undefined, {minimumFractionDigits: 2}); }
+
+                setTier(t) {
+                    this.tier = t;
+                    this.view = 'form';
+                    // Wait for Alpine to draw the form, then refresh icons
+                    setTimeout(() => lucide.createIcons(), 50);
+                },
+
+                addItem() {
+                    this.cart.push({ name: '', specs: '', qty: 1, unit: 'pc', price: 0 });
+                    setTimeout(() => lucide.createIcons(), 10);
+                },
+
+                removeItem(index) {
+                    if(this.cart.length > 1) this.cart.splice(index, 1);
+                },
+
+                resetModal() {
+                    this.view = 'selection';
+                    this.cart = [{ name: '', specs: '', qty: 1, unit: 'pc', price: 0 }];
+                },
+
+                get grandTotal() {
+                    return this.cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
+                },
+
+                formatMoney(val) {
+                    return parseFloat(val || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
+                }
             }
         }
 
