@@ -19,20 +19,21 @@ class RequestController extends Controller
     {
         $user = Auth::user();
 
-        // FIX: Point to Requisition model instead of SupplyRequest
-        // This ensures finished (released) and pending requests show up here.
+        // 1. Define the base query (Eager load items and user)
+        $query = \App\Models\Requisition::with(['items', 'user']);
+
+        // 2. Filter by user if they are an Employee
         if ($user->role == 'employee') {
-            $requests = Requisition::with('items')
-                ->where('user_id', $user->id)
-                ->latest()
-                ->get();
-        } else {
-            $requests = Requisition::with(['items', 'user'])
-                ->latest()
-                ->get();
+            $query->where('user_id', $user->id);
         }
 
-        return view('requests.index', compact('requests'));
+        // 3. Split into Active and Completed
+        $allRequests = $query->latest()->get();
+
+        $activeRequests = $allRequests->whereNotIn('status', ['released', 'rejected']);
+        $completedRequests = $allRequests->whereIn('status', ['released', 'rejected']);
+
+        return view('requests.index', compact('activeRequests', 'completedRequests'));
     }
 
     /**
