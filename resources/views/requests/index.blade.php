@@ -23,7 +23,7 @@
                 <div class="p-2 rounded-3 bg-primary-subtle text-primary me-2">
                     <i data-lucide="clock" style="width:18px;"></i>
                 </div>
-                <h5 class="fw-bold mb-0 text-dark">Active Tracking ({{ $activeRequests->count() }})</h5>
+                <h5 class="fw-bold mb-0 text-dark">Active Requests ({{ $activeRequests->count() }})</h5>
             </div>
             @include('requests.partials.history-table', ['requisitions' => $activeRequests, 'type' => 'active'])
         </div>
