@@ -3,7 +3,7 @@
         <thead class="bg-light text-muted small text-uppercase">
             <tr>
                 <th class="ps-4 py-3">Req #</th>
-                <th class="py-3">Requestor</th>
+                <th class="py-3">Requestor</th> <!-- This column -->
                 <th class="py-3">Items</th>
                 <th class="py-3">Total Amount</th>
                 <th class="pe-4 py-3 text-end">Action</th>
@@ -13,10 +13,21 @@
             @forelse($requests as $req)
                 <tr>
                     <td class="ps-4 fw-mono text-muted">#{{ $req->id }}</td>
+
+                    <!-- UPDATE THIS TD BLOCK -->
                     <td>
                         <div class="fw-bold text-dark">{{ $req->user->name }}</div>
-                        <div class="small text-muted" style="font-size: 10px;">{{ $req->user->department ?? 'General' }}</div>
+
+                        @if(in_array($req->user->role, ['president', 'provost']))
+                            <span class="badge bg-danger text-white px-2 mt-1" style="font-size: 9px; letter-spacing: 0.5px;">
+                                <i data-lucide="zap" style="width: 10px; height: 10px; vertical-align: middle;"></i> HIGH PRIORITY
+                            </span>
+                        @else
+                            <div class="small text-muted" style="font-size: 10px;">{{ $req->user->department ?? 'General' }}</div>
+                        @endif
                     </td>
+                    <!-- END OF UPDATE -->
+
                     <td>
                         <span class="fw-semibold">{{ $req->items->first()->item_name }}</span>
                         @if($req->items->count() > 1)

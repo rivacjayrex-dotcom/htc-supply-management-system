@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Requisition;
 use App\Models\RequisitionItem;
 use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,8 +13,9 @@ class RequisitionController extends Controller
 {
     public function store(Request $request)
     {
+        $user = Auth::user();
+
         // 1. VALIDATION
-        // We tell Laravel to expect an array called 'items'
         $request->validate([
             'request_type' => 'required',
             'items' => 'required|array|min:1',
@@ -22,24 +24,28 @@ class RequisitionController extends Controller
             'items.*.price' => 'required|numeric',
         ]);
 
-        // 2. CREATE THE "HEADER" (The Receipt)
-        // This creates the single entry that the Bosses will see and approve.
+        // 2. AUTO-APPROVAL LOGIC (Advisor's Rule)
+        // If the user is President or Provost, the status is pre-approved.
+        // Otherwise, it starts as 'pending' for the Dept Head.
+        $initialStatus = in_array($user->role, ['president', 'provost'])
+            ? 'approved_president'
+            : 'pending';
+
+        // 3. CREATE THE HEADER
         $requisition = Requisition::create([
-            'user_id' => Auth::id(),
+            'user_id' => $user->id,
             'request_type' => $request->request_type,
-            'status' => 'pending',
-            'grand_total' => 0, // We will calculate this in a moment
+            'status' => $initialStatus,
+            'grand_total' => 0,
         ]);
 
         $calculatedGrandTotal = 0;
 
-        // 3. THE CART LOOP (The Items)
-        // Since 'items' is an array from your Alpine.js form, we loop through it.
+        // 4. THE CART LOOP
         foreach ($request->items as $itemData) {
             $subtotal = $itemData['qty'] * $itemData['price'];
             $calculatedGrandTotal += $subtotal;
 
-            // Save each item individually and link it to the requisition ID
             RequisitionItem::create([
                 'requisition_id' => $requisition->id,
                 'item_name' => $itemData['name'],
@@ -51,19 +57,33 @@ class RequisitionController extends Controller
             ]);
         }
 
-        // 4. UPDATE THE GRAND TOTAL
-        // Now that the loop is done, we know the final price.
+        // 5. UPDATE THE GRAND TOTAL
         $requisition->update(['grand_total' => $calculatedGrandTotal]);
 
-        // 5. SEND NOTIFICATION (Optional but good for UX)
-        Notification::create([
-            'user_id' => Auth::id(),
-            'title' => 'Requisition Submitted',
-            'message' => "Your request for " . count($request->items) . " item(s) has been sent for approval.",
-            'icon' => 'send',
-            'type' => 'info'
-        ]);
+        // 6. SMART NOTIFICATIONS
+        if ($initialStatus === 'approved_president') {
+            // NOTIFY SMO: High Priority Alert
+            $smo = User::where('role', 'smo')->first();
+            if ($smo) {
+                Notification::create([
+                    'user_id' => $smo->id,
+                    'title' => '⚡ URGENT: Priority Requisition',
+                    'message' => "A direct requisition from the {$user->role} ({$user->name}) is ready for immediate release.",
+                    'icon' => 'zap',
+                    'type' => 'danger' // Red alert style
+                ]);
+            }
+        } else {
+            // NOTIFY USER: Standard submission
+            Notification::create([
+                'user_id' => $user->id,
+                'title' => 'Requisition Submitted',
+                'message' => "Your request for " . count($request->items) . " item(s) has been sent to your Department Head.",
+                'icon' => 'send',
+                'type' => 'info'
+            ]);
+        }
 
-        return redirect()->route('dashboard')->with('success', 'Requisition submitted successfully!');
+        return redirect()->route('dashboard')->with('success', 'Requisition processed successfully.');
     }
 }
