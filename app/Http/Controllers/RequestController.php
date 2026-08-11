@@ -227,4 +227,23 @@ class RequestController extends Controller
             'type' => $type
         ]);
     }
+
+    public function getLatestNotification()
+    {
+        // Fetch the most recent unread notification for the user
+        $notification = \App\Models\Notification::where('user_id', auth()->id())
+            ->where('is_read', false)
+            ->latest()
+            ->first();
+
+        if ($notification) {
+            // We don't mark it as read yet, so the badge in the sidebar stays.
+            // But we return it to show the pop-up.
+            return response()->json($notification);
+        }
+
+        return response()->json(null);
+    }
 }
+
+

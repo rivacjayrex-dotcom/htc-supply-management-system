@@ -111,3 +111,6 @@ Route::get('/dashboard', function () {
 
     // Route for the "Details" / Shopee-style tracker page
     Route::get('/requests/{id}', [RequestController::class, 'show'])->name('requests.show');
+
+
+    Route::get('/api/latest-notification', [RequestController::class, 'getLatestNotification']);

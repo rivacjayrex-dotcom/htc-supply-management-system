@@ -603,72 +603,129 @@
 
                         <!-- RIGHT: Summary Sidebar -->
                        <!-- RIGHT: Summary Sidebar (Fixed Version) -->
-<div class="col-lg-4 p-4 bg-white border-start">
-    <div class="d-flex flex-column h-100">
-        <h6 class="fw-bold text-dark mb-4">Submission Summary</h6>
+                        <div class="col-lg-4 p-4 bg-white border-start">
+                            <div class="d-flex flex-column h-100">
+                                <h6 class="fw-bold text-dark mb-4">Submission Summary</h6>
 
-        <!-- Total Items -->
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <span class="text-muted small fw-bold">TOTAL ITEMS</span>
-            <span class="fw-bold h5 mb-0" x-text="cart.length"></span>
-        </div>
+                                <!-- Total Items -->
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-muted small fw-bold">TOTAL ITEMS</span>
+                                    <span class="fw-bold h5 mb-0" x-text="cart.length"></span>
+                                </div>
 
-        <!-- Workflow Path (Stacked for better fit) -->
-        <div class="mb-4">
-            <span class="text-muted small fw-bold d-block mb-2 text-uppercase">Workflow Path</span>
-            <span class="badge rounded-pill px-3 py-2 w-100 border text-center"
-                  :class="tier === 'major' ? 'bg-warning-subtle text-warning border-warning' : 'bg-success-subtle text-success border-success'"
-                  x-text="tier.toUpperCase() + ' ROUTING'"></span>
-        </div>
+                                <!-- Workflow Path (Stacked for better fit) -->
+                                <div class="mb-4">
+                                    <span class="text-muted small fw-bold d-block mb-2 text-uppercase">Workflow Path</span>
+                                    <span class="badge rounded-pill px-3 py-2 w-100 border text-center"
+                                        :class="tier === 'major' ? 'bg-warning-subtle text-warning border-warning' : 'bg-success-subtle text-success border-success'"
+                                        x-text="tier.toUpperCase() + ' ROUTING'"></span>
+                                </div>
 
-        <hr class="opacity-50">
+                                <hr class="opacity-50">
 
-        <!-- Grand Total -->
-        <div class="py-3 text-center">
-            <small class="text-muted uppercase fw-bold d-block mb-1" style="font-size: 10px;">ESTIMATED GRAND TOTAL</small>
-            <h2 class="fw-black mb-0"
-                :class="(tier === 'minor' && grandTotal > 1000) ? 'text-danger' : 'text-success'"
-                style="font-size: 2rem;">
-                ₱<span x-text="formatMoney(grandTotal)"></span>
-            </h2>
+                                <!-- Grand Total -->
+                                <div class="py-3 text-center">
+                                    <small class="text-muted uppercase fw-bold d-block mb-1" style="font-size: 10px;">ESTIMATED GRAND TOTAL</small>
+                                    <h2 class="fw-black mb-0"
+                                        :class="(tier === 'minor' && grandTotal > 1000) ? 'text-danger' : 'text-success'"
+                                        style="font-size: 2rem;">
+                                        ₱<span x-text="formatMoney(grandTotal)"></span>
+                                    </h2>
 
-            <!-- Warning -->
-            <template x-if="tier === 'minor' && grandTotal > 1000">
-                <div class="mt-2 text-danger fw-bold animate__animated animate__shakeX" style="font-size: 9px; line-height: 1.2;">
-                    ⚠️ MINOR LIMIT EXCEEDED (MAX ₱1,000)<br>SWITCH TO MAJOR TIER
-                </div>
-            </template>
-        </div>
+                                    <!-- Warning -->
+                                    <template x-if="tier === 'minor' && grandTotal > 1000">
+                                        <div class="mt-2 text-danger fw-bold animate__animated animate__shakeX" style="font-size: 9px; line-height: 1.2;">
+                                            ⚠️ MINOR LIMIT EXCEEDED (MAX ₱1,000)<br>SWITCH TO MAJOR TIER
+                                        </div>
+                                    </template>
+                                </div>
 
-        <!-- Submit Button (Fixed) -->
-        <div class="mt-auto">
-            <form action="{{ route('requisitions.store') }}" method="POST">
-                @csrf
-                <input type="hidden" name="request_type" :value="tier">
-                <template x-for="(item, index) in cart">
-                    <div>
-                        <input type="hidden" :name="'items['+index+'][name]'" :value="item.name">
-                        <input type="hidden" :name="'items['+index+'][specs]'" :value="item.specs">
-                        <input type="hidden" :name="'items['+index+'][qty]'" :value="item.qty">
-                        <input type="hidden" :name="'items['+index+'][unit]'" :value="item.unit">
-                        <input type="hidden" :name="'items['+index+'][price]'" :value="item.price">
+                                <!-- Submit Button (Fixed) -->
+                                <div class="mt-auto">
+                                    <form action="{{ route('requisitions.store') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="request_type" :value="tier">
+                                        <template x-for="(item, index) in cart">
+                                            <div>
+                                                <input type="hidden" :name="'items['+index+'][name]'" :value="item.name">
+                                                <input type="hidden" :name="'items['+index+'][specs]'" :value="item.specs">
+                                                <input type="hidden" :name="'items['+index+'][qty]'" :value="item.qty">
+                                                <input type="hidden" :name="'items['+index+'][unit]'" :value="item.unit">
+                                                <input type="hidden" :name="'items['+index+'][price]'" :value="item.price">
+                                            </div>
+                                        </template>
+
+                                        <button type="submit"
+                                                class="btn btn-success w-100 py-3 fw-bold shadow-sm d-block"
+                                                style="border-radius: 12px; font-size: 0.9rem;"
+                                                :disabled="tier === 'minor' && grandTotal > 1000"
+                                                :class="tier === 'minor' && grandTotal > 1000 ? 'opacity-50 grayscale cursor-not-allowed' : ''">
+                                            SUBMIT REQUISITION
+                                        </button>
+                                    </form>
+                                    <p class="text-center text-muted mt-3 mb-0" style="font-size: 9px;">
+                                        Secure Institutional Requisition <br> Holy Trinity College SMO
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </template>
-
-                <button type="submit"
-                        class="btn btn-success w-100 py-3 fw-bold shadow-sm d-block"
-                        style="border-radius: 12px; font-size: 0.9rem;"
-                        :disabled="tier === 'minor' && grandTotal > 1000"
-                        :class="tier === 'minor' && grandTotal > 1000 ? 'opacity-50 grayscale cursor-not-allowed' : ''">
-                    SUBMIT REQUISITION
-                </button>
-            </form>
-            <p class="text-center text-muted mt-3 mb-0" style="font-size: 9px;">
-                Secure Institutional Requisition <br> Holy Trinity College SMO
-            </p>
+                </div>
+            </div>
         </div>
     </div>
-</div>
+
+    <!-- LIVE TOAST NOTIFICATION SYSTEM -->
+    <div x-data="{
+            show: false,
+            message: '',
+            title: '',
+            type: 'info',
+            lastId: null,
+
+            init() {
+                // Check for new notifications every 15 seconds
+                setInterval(() => {
+                    fetch('/api/latest-notification')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data && data.id !== this.lastId) {
+                                this.title = data.title;
+                                this.message = data.message;
+                                this.type = data.type;
+                                this.lastId = data.id;
+                                this.show = true;
+
+                                // Play a subtle sound (Optional)
+                                // new Audio('/sounds/notification.mp3').play();
+
+                                // Auto-hide after 8 seconds
+                                setTimeout(() => { this.show = false; }, 8000);
+                            }
+                        });
+                }, 15000);
+            }
+        }"
+        x-show="show"
+        x-transition:enter="animate__animated animate__fadeInUp"
+        x-transition:leave="animate__animated animate__fadeOutDown"
+        class="position-fixed bottom-0 end-0 p-4"
+        style="z-index: 9999; display: none;"
+        x-cloak>
+
+        <div class="card border-0 shadow-lg rounded-4 overflow-hidden" style="width: 320px; border-left: 5px solid var(--htc-green) !important;">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-start">
+                    <div class="p-2 rounded-circle bg-light me-3">
+                        <i data-lucide="bell-ring" class="text-success" style="width: 18px;"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="fw-bold mb-1 small text-dark" x-text="title"></h6>
+                        <p class="text-muted mb-2" style="font-size: 11px; line-height: 1.3;" x-text="message"></p>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a href="{{ route('notifications') }}" class="small fw-bold text-success text-decoration-none" style="font-size: 10px;">VIEW DETAILS</a>
+                            <button @click="show = false" class="btn btn-link p-0 text-muted shadow-none" style="font-size: 10px;">Dismiss</button>
+                        </div>
                     </div>
                 </div>
             </div>
