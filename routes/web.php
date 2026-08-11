@@ -20,36 +20,45 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     $user = Auth::user();
 
-    // 1. Count Active Requisitions
-    $activeCount = Requisition::where('user_id', $user->id)
-        ->whereNotIn('status', ['released', 'rejected'])
-        ->count();
+    // 1. Employee Logic (Keep as is)
+    $activeCount = Requisition::where('user_id', $user->id)->whereNotIn('status', ['released', 'rejected'])->count();
+    $approvedLast24h = Requisition::where('user_id', $user->id)->whereIn('status', ['approved_president', 'released'])->where('updated_at', '>=', now()->subDay())->count();
+    $recentRequests = Requisition::with('items')->where('user_id', $user->id)->latest()->take(5)->get();
 
-    // 2. Count Approved/Released in last 24 hours
-    $approvedLast24h = Requisition::where('user_id', $user->id)
-        ->whereIn('status', ['approved_president', 'released'])
-        ->where('updated_at', '>=', Carbon::now()->subDay())
-        ->count();
+    $stats = [
+            'total' => 0, 'pending' => 0, 'urgent' => 0, 'monthly_value' => 0
+        ];
+        $recentActivity = [];
+        $allStaffRequests = [];
 
-    // 3. Get Recent Requisitions (with their items)
-    $recentRequests = Requisition::with('items')
-        ->where('user_id', $user->id)
-        ->latest()
-        ->take(5)
-        ->get();
+        if ($user->role == 'smo') {
+            // 1. Total Requests (All time)
+            $stats['total'] = Requisition::count();
 
-    $urgentCount = 0;
-    $lowStockCount = 0;
+            // 2. Pending Requests (Active in any stage of approval)
+            $stats['pending'] = Requisition::whereNotIn('status', ['released', 'rejected'])->count();
 
-    if ($user->role == 'smo') {
-        $urgentCount = Requisition::whereIn('status', ['approved_president', 'approved_vp'])
-            ->where('updated_at', '<=', now()->subDays(2))
-            ->count();
-        $lowStockCount = \App\Models\Supply::where('quantity', '<=', 10)->count();
-    }
+            // 3. Near Deadline (Approved for > 48hrs but not released)
+            $stats['urgent'] = Requisition::whereIn('status', ['approved_president', 'approved_vp'])
+                ->where('updated_at', '<=', now()->subDays(2))
+                ->count();
 
-    return view('dashboard', compact('activeCount', 'approvedLast24h', 'recentRequests', 'urgentCount', 'lowStockCount'));
+            // 4. Monthly Distribution Value
+            $stats['monthly_value'] = Requisition::where('status', 'released')
+                ->whereMonth('updated_at', now()->month)
+                ->sum('grand_total');
 
+            // Left Column: All Recent Requests from everyone
+            $allStaffRequests = Requisition::with(['items', 'user'])->latest()->take(8)->get();
+
+            // Right Column: Mini Notification Feed
+            $recentActivity = \App\Models\Notification::where('user_id', $user->id)->latest()->take(5)->get();
+        }
+
+        return view('dashboard', compact(
+            'activeCount', 'approvedLast24h', 'recentRequests',
+            'stats', 'allStaffRequests', 'recentActivity'
+    ));
 })->middleware(['auth'])->name('dashboard');
 
     // EMPLOYEE REQUEST ROUTES

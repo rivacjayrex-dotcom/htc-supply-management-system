@@ -350,7 +350,7 @@
 
                 @if(Auth::user()->role == 'smo')
                     <div class="nav-section-label">Inventory & Logistics</div>
-                    <a href="{{ route('admin.approvals') }}" class="nav-link-custom">
+                    <a href="{{ route('admin.approvals') }}" class="nav-link-custom {{ request()->routeIs('admin.approvals') ? 'active' : '' }}">
                         <i data-lucide="truck"></i> Release Queue
                     </a>
                     <a href="{{ route('inventory.index') }}" class="nav-link-custom {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
