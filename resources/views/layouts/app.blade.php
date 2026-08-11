@@ -386,7 +386,7 @@
             <div class="flex-grow-1">
                 <div class="nav-section-label">General</div>
                 <a href="{{ route('dashboard') }}" class="nav-link-custom {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-                    <i data-lucide="layout-dashboard"></i> Dashboard
+                    <i data-lucide="layout-dashboard"></i> Home
                 </a>
                 <a href="{{ route('requests.index') }}" class="nav-link-custom {{ request()->routeIs('requests.index') ? 'active' : '' }}">
                     <i data-lucide="clipboard-list"></i> Requests

@@ -32,12 +32,12 @@
 
         /* This is the white box container */
         .login-card {
-            width: 720px;   /* Was 850px - This makes it much narrower */
-            height: 480px;  /* Was 520px - This makes it shorter */
+            width: 640px;   /* Reduced from 720px */
+            height: 430px;  /* Reduced from 480px */
             background: white;
-            border-radius: 12px; /* Slightly smaller radius looks better on smaller boxes */
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
             display: flex;
         }
     </style>
