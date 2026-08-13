@@ -27,16 +27,5 @@
             </div>
             @include('requests.partials.history-table', ['requisitions' => $activeRequests, 'type' => 'active'])
         </div>
-
-        <!-- SECTION 2: COMPLETED ARCHIVE -->
-        <div class="animate__animated animate__fadeIn" style="animation-delay: 0.2s;">
-            <div class="d-flex align-items-center mb-3">
-                <div class="p-2 rounded-3 bg-success-subtle text-success me-2">
-                    <i data-lucide="archive" style="width:18px;"></i>
-                </div>
-                <h5 class="fw-bold mb-0 text-dark">Completed Archive ({{ $completedRequests->count() }})</h5>
-            </div>
-            @include('requests.partials.history-table', ['requisitions' => $completedRequests, 'type' => 'completed'])
-        </div>
     </div>
 </x-app-layout>

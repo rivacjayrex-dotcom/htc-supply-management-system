@@ -121,4 +121,8 @@ Route::get('/dashboard', function () {
     Route::patch('/requisitions/{id}', [RequisitionController::class, 'update'])->name('requisitions.update');
     Route::delete('/requisitions/{id}', [RequisitionController::class, 'destroy'])->name('requisitions.destroy');
 
+    //Statistics and Reports Page
     Route::get('/admin/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('admin.reports');
+
+    //Archive Page route
+    Route::get('/admin/archive', [App\Http\Controllers\ArchiveController::class, 'index'])->name('admin.archive');

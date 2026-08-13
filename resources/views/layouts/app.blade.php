@@ -400,6 +400,13 @@
                 <a href="{{ route('requests.index') }}" class="nav-link-custom {{ request()->routeIs('requests.index') ? 'active' : '' }}">
                     <i data-lucide="clipboard-list"></i> Requests
                 </a>
+
+                 @if(Auth::user()->role == 'smo')
+                    <a href="{{ route('admin.archive') }}" class="nav-link-custom {{ request()->routeIs('admin.archive') ? 'active' : '' }}">
+                        <i data-lucide="archive"></i> Complete Archive
+                    </a>
+                @endif
+
                 <a href="{{ route('notifications') }}" class="nav-link-custom {{ request()->routeIs('notifications') ? 'active' : '' }}">
                     <div class="d-flex justify-content-between align-items-center w-100">
                         <div><i data-lucide="bell"></i> Notifications</div>
