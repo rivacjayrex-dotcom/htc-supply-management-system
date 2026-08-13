@@ -20,44 +20,48 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     $user = Auth::user();
 
-    // 1. Employee Logic (Keep as is)
-    $activeCount = Requisition::where('user_id', $user->id)->whereNotIn('status', ['released', 'rejected'])->count();
-    $approvedLast24h = Requisition::where('user_id', $user->id)->whereIn('status', ['approved_president', 'released'])->where('updated_at', '>=', now()->subDay())->count();
-    $recentRequests = Requisition::with('items')->where('user_id', $user->id)->latest()->take(5)->get();
+    // 1. BASE COUNTERS (Keep these to show overall health)
+    $activeCount = Requisition::where('user_id', $user->id)
+        ->whereNotIn('status', ['released', 'rejected'])
+        ->count();
 
-    $stats = [
-            'total' => 0, 'pending' => 0, 'urgent' => 0, 'monthly_value' => 0
-        ];
-        $recentActivity = [];
-        $allStaffRequests = [];
+    $approvedLast24h = Requisition::where('user_id', $user->id)
+        ->whereIn('status', ['approved_president', 'released'])
+        ->where('updated_at', '>=', now()->subDay())
+        ->count();
 
-        if ($user->role == 'smo') {
-            // 1. Total Requests (All time)
-            $stats['total'] = Requisition::count();
+    // 2. EMPLOYEE TABLE: Filter to show ONLY Pending/In-Progress
+    $recentRequests = Requisition::with('items')
+        ->where('user_id', $user->id)
+        ->whereNotIn('status', ['released', 'rejected']) // <--- THE FILTER
+        ->latest()
+        ->get();
 
-            // 2. Pending Requests (Active in any stage of approval)
-            $stats['pending'] = Requisition::whereNotIn('status', ['released', 'rejected'])->count();
+    // 3. SMO SPECIFIC LOGIC
+    $stats = ['total' => 0, 'pending' => 0, 'urgent' => 0, 'monthly_value' => 0];
+    $recentActivity = [];
+    $allStaffRequests = [];
 
-            // 3. Near Deadline (Approved for > 48hrs but not released)
-            $stats['urgent'] = Requisition::whereIn('status', ['approved_president', 'approved_vp'])
-                ->where('updated_at', '<=', now()->subDays(2))
-                ->count();
+    if ($user->role == 'smo') {
+        $stats['total'] = Requisition::count();
+        $stats['pending'] = Requisition::whereNotIn('status', ['released', 'rejected'])->count();
+        $stats['urgent'] = Requisition::whereIn('status', ['approved_president', 'approved_vp'])
+            ->where('updated_at', '<=', now()->subDays(2))->count();
+        $stats['monthly_value'] = Requisition::where('status', 'released')
+            ->whereMonth('updated_at', now()->month)->sum('grand_total');
 
-            // 4. Monthly Distribution Value
-            $stats['monthly_value'] = Requisition::where('status', 'released')
-                ->whereMonth('updated_at', now()->month)
-                ->sum('grand_total');
+        // SMO TABLE: Only show items that still need to be processed/released
+        $allStaffRequests = Requisition::with(['items', 'user'])
+            ->whereNotIn('status', ['released', 'rejected']) // <--- THE FILTER
+            ->latest()
+            ->get();
 
-            // Left Column: All Recent Requests from everyone
-            $allStaffRequests = Requisition::with(['items', 'user'])->latest()->take(8)->get();
+        $recentActivity = \App\Models\Notification::where('user_id', $user->id)->latest()->take(5)->get();
+    }
 
-            // Right Column: Mini Notification Feed
-            $recentActivity = \App\Models\Notification::where('user_id', $user->id)->latest()->take(5)->get();
-        }
-
-        return view('dashboard', compact(
-            'activeCount', 'approvedLast24h', 'recentRequests',
-            'stats', 'allStaffRequests', 'recentActivity'
+    return view('dashboard', compact(
+        'activeCount', 'approvedLast24h', 'recentRequests',
+        'stats', 'allStaffRequests', 'recentActivity'
     ));
 })->middleware(['auth'])->name('dashboard');
 

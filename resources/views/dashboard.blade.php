@@ -75,7 +75,7 @@
                 <div class="col-lg-8 animate__animated animate__fadeInLeft">
                     <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                         <div class="card-header bg-white border-0 p-4 d-flex justify-content-between align-items-center">
-                            <h6 class="fw-bold mb-0">Recent Institutional Requests</h6>
+                            <h6 class="fw-bold mb-0">Active Institutional Queue</h6>
                             <a href="{{ route('admin.approvals') }}" class="btn btn-sm btn-light border rounded-pill px-3 fw-bold" style="font-size: 11px;">View Full Queue</a>
                         </div>
                         <div class="table-responsive">
@@ -178,7 +178,7 @@
             <!-- RECENT REQUESTS TABLE -->
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
                 <div class="card-header bg-white border-bottom p-4 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 fw-bold">Recent Request Status</h6>
+                    <h6 class="m-0 fw-bold">My Active Requisitions</h6>
                     <a href="{{ route('requests.index') }}" class="text-decoration-none fw-bold small text-success">View Full History →</a>
                 </div>
                 <div class="table-responsive">
