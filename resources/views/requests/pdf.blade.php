@@ -180,7 +180,7 @@
             <tr>
                 <td>
                     <div style="height: 30px;"><span class="digital-stamp">{{ $request->status == 'released' ? '✓ RELEASED' : '' }}</span></div>
-                    <div class="fw-bold">GERALDINE T. GULANE</div>
+                    <div class="fw-bold">VEVERLY EMBALSADO</div>
                     <div style="font-size: 8px;">SMO In-charge</div>
                 </td>
                 <td>

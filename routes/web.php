@@ -114,3 +114,11 @@ Route::get('/dashboard', function () {
 
 
     Route::get('/api/latest-notification', [RequestController::class, 'getLatestNotification']);
+
+
+    // Requisition Management (Edit/Delete)
+    Route::get('/requisitions/{id}/edit', [RequisitionController::class, 'edit'])->name('requisitions.edit');
+    Route::patch('/requisitions/{id}', [RequisitionController::class, 'update'])->name('requisitions.update');
+    Route::delete('/requisitions/{id}', [RequisitionController::class, 'destroy'])->name('requisitions.destroy');
+
+    Route::get('/admin/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('admin.reports');

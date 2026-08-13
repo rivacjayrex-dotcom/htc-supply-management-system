@@ -86,4 +86,69 @@ class RequisitionController extends Controller
 
         return redirect()->route('dashboard')->with('success', 'Requisition processed successfully.');
     }
+
+    // 1. Show Edit Form
+    public function edit($id)
+    {
+        $requisition = Requisition::with('items')->where('user_id', Auth::id())->findOrFail($id);
+
+        // Security Guardrail: Only allow editing if still pending
+        if ($requisition->status !== 'pending') {
+            return redirect()->route('dashboard')->with('error', 'Cannot edit: Requisition is already in the approval process.');
+        }
+
+        return view('requests.edit', compact('requisition'));
+    }
+
+    // 2. Save Changes
+    public function update(Request $request, $id)
+    {
+        $requisition = Requisition::where('user_id', Auth::id())->findOrFail($id);
+
+        if ($requisition->status !== 'pending') {
+            return back()->with('error', 'Access denied: Approval has already started.');
+        }
+
+        $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.name' => 'required|string',
+            'items.*.qty' => 'required|integer|min:1',
+            'items.*.price' => 'required|numeric',
+        ]);
+
+        // Update the Requisition Header
+        $requisition->update(['request_type' => $request->request_type]);
+
+        // Refresh the items (Delete old ones and add new ones)
+        $requisition->items()->delete();
+
+        $grandTotal = 0;
+        foreach ($request->items as $itemData) {
+            $subtotal = $itemData['qty'] * $itemData['price'];
+            $grandTotal += $subtotal;
+
+            RequisitionItem::create([
+                'requisition_id' => $requisition->id,
+                'item_name' => $itemData['name'],
+                'specifications' => $itemData['specs'],
+                'quantity' => $itemData['qty'],
+                'unit' => $itemData['unit'] ?? 'pc',
+                'unit_price' => $itemData['price'],
+                'subtotal' => $subtotal,
+            ]);
+        }
+
+        $requisition->update(['grand_total' => $grandTotal]);
+
+        return redirect()->route('requests.index')->with('success', 'Requisition updated successfully.');
+    }
+
+    // 3. Delete Requisition
+    public function destroy($id)
+    {
+        $requisition = Requisition::where('user_id', Auth::id())->where('status', 'pending')->findOrFail($id);
+        $requisition->delete(); // This also deletes items because of onDelete('cascade') in migration
+
+        return redirect()->route('requests.index')->with('success', 'Requisition deleted successfully.');
+    }
 }

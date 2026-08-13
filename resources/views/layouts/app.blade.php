@@ -406,6 +406,12 @@
                         @if($unreadCount > 0) <span class="badge rounded-pill bg-danger" style="font-size: 10px;">{{ $unreadCount }}</span> @endif
                     </div>
                 </a>
+                @if(Auth::user()->role == 'smo')
+                    <div class="nav-section-label">Institutional Reports</div>
+                    <a href="{{ route('admin.reports') }}" class="nav-link-custom {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
+                        <i data-lucide="pie-chart"></i> Operations Analytics
+                    </a>
+                @endif
 
                 @if(in_array(Auth::user()->role, ['dept_head', 'vp_finance', 'vp_admin', 'provost', 'president']))
                     <div class="nav-section-label">Management</div>
