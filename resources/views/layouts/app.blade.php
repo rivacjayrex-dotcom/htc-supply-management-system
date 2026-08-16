@@ -567,51 +567,99 @@
                 <!-- VIEW 2: DYNAMIC FORM -->
                 <div x-show="view === 'form'" x-transition class="p-0 h-100" x-cloak>
                     <div class="row g-0">
-                        <!-- LEFT: Form Area -->
-                        <div class="col-lg-8 p-4 border-end" style="background: #fafbfc; max-height: 600px; overflow-y: auto;">
+                        <!-- LEFT: THE CART WORKSPACE -->
+                        <div class="col-lg-8 p-4 border-end" style="background: #fafbfc; min-height: 550px; max-height: 650px; overflow-y: auto;">
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <button @click="view = 'selection'" class="btn btn-sm btn-light rounded-pill border px-3">
-                                    <i data-lucide="chevron-left" class="me-1" style="width:14px"></i> Switch Tier
+                                    <i data-lucide="chevron-left" class="me-1" style="width:14px"></i> Back
                                 </button>
-                                <span class="small text-muted fw-bold uppercase">Item Entry Log</span>
+
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="manualMode" x-model="manualMode">
+                                    <label class="form-check-label small fw-bold text-muted" for="manualMode">ITEM NOT IN LIST? (MANUAL INPUT)</label>
+                                </div>
                             </div>
 
-                            <template x-for="(item, index) in cart" :key="index">
-                                <div class="card border-0 shadow-sm rounded-4 mb-3 requisition-item-row p-3">
-                                    <div class="row g-3">
-                                        <div class="col-md-7">
-                                            <label class="form-label mini-label">Description & Specs</label>
-                                            <input type="text" x-model="item.name" class="form-control form-control-sm border-0 bg-light mb-2 fw-bold" placeholder="Item Name (e.g. Epson Ink 003)">
-                                            <textarea x-model="item.specs" class="form-control form-control-sm border-0 bg-light" rows="1" placeholder="Technical Specifications..."></textarea>
-                                        </div>
-                                        <div class="col-md-5">
-                                            <div class="row g-2">
-                                                <div class="col-6">
-                                                    <label class="form-label mini-label">Quantity</label>
-                                                    <div class="input-group input-group-sm">
-                                                        <input type="number" x-model.number="item.qty" class="form-control border-0 bg-light text-center" min="1">
-                                                        <input type="text" x-model="item.unit" class="form-control border-0 bg-light text-muted w-25" placeholder="pc">
+                            <!-- SEARCH / SELECT BOX (Guided Input) -->
+                            <div class="mb-4 bg-white p-3 rounded-4 shadow-sm border border-success border-opacity-25" x-show="!manualMode" x-transition>
+                                <label class="mini-label mb-2"><i data-lucide="search" class="me-1" style="width:10px"></i> Select Institutional Stock</label>
+                                <select class="form-select border-0 bg-light py-2 fw-bold" @change="addItemFromInventory($event.target.value); $event.target.value = ''">
+                                    <option value="">Search for items (e.g. Bond Paper, Ink)...</option>
+                                    @foreach($availableSupplies as $s)
+                                        <option value="{{ json_encode([
+                                            'id' => $s->id,
+                                            'name' => $s->item_name,
+                                            'specs' => $s->brand . ' — ' . $s->physical_description,
+                                            'unit' => $s->unit,
+                                            'price' => $s->unit_price
+                                        ]) }}">
+                                            {{ $s->item_name }} ({{ $s->brand }}) — ₱{{ number_format($s->unit_price, 2) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted mt-2 d-block" style="font-size: 9px;">Official items have pre-validated prices and specifications.</small>
+                            </div>
+
+                            <!-- THE CART LIST -->
+                            <div class="pe-2">
+                                <template x-for="(item, index) in cart" :key="index">
+                                    <div class="card border-0 shadow-sm rounded-4 mb-3 p-3 border-start border-4 transition-all"
+                                        :class="item.is_manual ? 'border-warning' : 'border-success'">
+
+                                        <div class="row g-3 align-items-center">
+                                            <div class="col-md-7">
+                                                <span class="badge bg-light text-dark mb-2" style="font-size: 8px;" x-text="item.is_manual ? 'CUSTOM ITEM' : 'OFFICIAL STOCK'"></span>
+
+                                                <input type="text" x-model="item.name" class="form-control form-control-sm border-0 bg-transparent fw-bold p-0 shadow-none"
+                                                    :readonly="!item.is_manual" :placeholder="item.is_manual ? 'Enter Item Name...' : ''" style="font-size: 1.1rem;">
+
+                                                <textarea x-model="item.specs" class="form-control form-control-sm border-0 bg-transparent p-0 text-muted shadow-none mt-1"
+                                                        rows="1" :readonly="!item.is_manual" placeholder="Add specifications..."></textarea>
+                                            </div>
+
+                                            <div class="col-md-5">
+                                                <div class="row g-2">
+                                                    <div class="col-7">
+                                                        <label class="mini-label text-primary">Input Quantity</label>
+                                                        <div class="input-group input-group-sm border rounded-3 overflow-hidden shadow-sm">
+                                                            <!-- THE MANUAL QUANTITY INPUT -->
+                                                            <input type="number" x-model.number="item.qty"
+                                                                class="form-control border-0 text-center fw-bold bg-white"
+                                                                min="1" @input="calculateTotal()">
+                                                            <span class="input-group-text border-0 bg-white text-muted small px-2" x-text="item.unit"></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-5 text-end">
+                                                        <label class="mini-label">Unit Price</label>
+                                                        <div class="fw-bold mt-1" x-text="'₱' + formatMoney(item.price)"></div>
                                                     </div>
                                                 </div>
-                                                <div class="col-6 text-end">
-                                                    <label class="form-label mini-label">Est. Price</label>
-                                                    <input type="number" x-model.number="item.price" class="form-control form-control-sm border-0 bg-light text-end fw-bold" step="0.01">
+                                                <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top border-light">
+                                                    <button type="button" @click="removeItem(index)" class="btn btn-sm text-danger p-0 d-flex align-items-center" style="font-size: 10px;">
+                                                        <i data-lucide="trash-2" class="me-1" style="width:12px"></i> Remove
+                                                    </button>
+                                                    <div class="fw-bold text-success small" style="letter-spacing: 0.5px;">
+                                                        SUBTOTAL: ₱<span x-text="formatMoney(item.qty * item.price)"></span>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                                <button @click="removeItem(index)" class="btn btn-sm text-danger opacity-50 hover-opacity-100" x-show="cart.length > 1">
-                                                    <i data-lucide="trash-2" style="width:14px"></i> Remove
-                                                </button>
-                                                <div class="fw-bold text-success small">Subtotal: ₱<span x-text="formatMoney(item.qty * item.price)"></span></div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </template>
+                                </template>
+                            </div>
 
-                            <button @click="addItem()" class="btn btn-outline-dashed w-100 py-3 rounded-4 mt-2">
-                                <i data-lucide="plus-circle" class="me-2"></i> Add Another Item to this Requisition
-                            </button>
+                            <!-- MANUAL ENTRY BUTTON -->
+                            <div x-show="manualMode" x-transition class="mt-2">
+                                <button type="button" @click="addItemManual()" class="btn btn-outline-dashed w-100 py-3 rounded-4">
+                                    <i data-lucide="plus-circle" class="me-2" style="width:16px"></i> Add Custom Item Description
+                                </button>
+                            </div>
+
+                            <!-- EMPTY STATE -->
+                            <div x-show="cart.length === 0" class="text-center py-5 opacity-25">
+                                <i data-lucide="shopping-basket" style="width: 48px; height: 48px;" class="mb-2"></i>
+                                <p class="small">Cart is empty. Select items above to begin.</p>
+                            </div>
                         </div>
 
                         <!-- RIGHT: Summary Sidebar -->
@@ -756,39 +804,61 @@
             return {
                 tier: 'minor',
                 view: 'selection',
-                cart: [{ name: '', specs: '', qty: 1, unit: 'pc', price: 0 }],
+                manualMode: false,
+                cart: [],
 
                 setTier(t) {
                     this.tier = t;
                     this.view = 'form';
-                    // Wait for Alpine to draw the form, then refresh icons
+                    this.cart = []; // Clear cart for fresh start
+                    this.manualMode = false;
                     setTimeout(() => lucide.createIcons(), 50);
                 },
 
-                addItem() {
-                    this.cart.push({ name: '', specs: '', qty: 1, unit: 'pc', price: 0 });
+                // ADD FROM OFFICIAL SMO REGISTRY
+                addItemFromInventory(jsonString) {
+                    if (!jsonString) return;
+                    const data = JSON.parse(jsonString);
+
+                    // If item already in cart, just increment quantity
+                    const existing = this.cart.find(i => i.item_id === data.id);
+                    if (existing) {
+                        existing.qty++;
+                        return;
+                    }
+
+                    this.cart.push({
+                        item_id: data.id,
+                        name: data.name,
+                        specs: data.specs,
+                        qty: 1, // User can change this in the UI
+                        unit: data.unit,
+                        price: data.price,
+                        is_manual: false
+                    });
                     setTimeout(() => lucide.createIcons(), 10);
                 },
 
-                removeItem(index) {
-                    if(this.cart.length > 1) this.cart.splice(index, 1);
+                // ADD CUSTOM ITEM
+                addItemManual() {
+                    this.cart.push({
+                        item_id: null,
+                        name: '',
+                        specs: '',
+                        qty: 1,
+                        unit: 'pc',
+                        price: 0,
+                        is_manual: true
+                    });
+                    setTimeout(() => lucide.createIcons(), 10);
                 },
 
-                resetModal() {
-                    this.view = 'selection';
-                    this.cart = [{ name: '', specs: '', qty: 1, unit: 'pc', price: 0 }];
-                },
-
-                get grandTotal() {
-                    return this.cart.reduce((sum, item) => sum + (item.qty * item.price), 0);
-                },
-
-                formatMoney(val) {
-                    return parseFloat(val || 0).toLocaleString(undefined, {minimumFractionDigits: 2});
-                }
+                removeItem(index) { this.cart.splice(index, 1); },
+                get grandTotal() { return this.cart.reduce((sum, item) => sum + (item.qty * item.price), 0); },
+                formatMoney(val) { return parseFloat(val || 0).toLocaleString(undefined, {minimumFractionDigits: 2}); },
+                resetModal() { this.view = 'selection'; this.cart = []; }
             }
         }
-
         // Modal Controls
         const myModalEl = document.getElementById('globalRequestModal')
             myModalEl.addEventListener('hidden.bs.modal', event => {

@@ -24,25 +24,23 @@ class SupplyController extends Controller
     // Save a new item to the database
     public function store(Request $request)
     {
-        // STRICT VALIDATION RULES
         $request->validate([
-            'item_name' => 'required|string|max:255|unique:supplies,item_name', // No duplicates
-            'brand' => 'required|string|max:100',
-            'category' => 'required|in:Office Supplies,IT Equipment,Janitorial,Furniture,Laboratory', // Restricted list
-            'quantity' => 'required|integer|min:1', // Must be at least 1
-            'unit' => 'required|string|in:Ream,Box,Piece,Set,Roll,Bottle,Pack', // Must be standard units
-            'unit_price' => 'required|numeric|min:0.01', // Cannot be 0 or negative
+            'item_name' => 'required|string|unique:supplies,item_name',
+            'brand' => 'required|string',
+            'category' => 'required|in:Office Supplies,IT Equipment,Janitorial,Furniture,Laboratory',
+            'quantity' => 'required|integer|min:0',
+            'unit' => 'required|in:Ream,Box,Piece,Set,Bottle,Pack,Roll', // Strict Units
+            'unit_price' => 'required|numeric|min:0.01',
             'min_stock_level' => 'required|integer|min:0',
+            'physical_description' => 'required|string|min:10', // Forced detail
         ], [
-            // CUSTOM ERROR MESSAGES (To satisfy the "No wrong data" rule)
-            'item_name.unique' => 'This item is already in the system. Use the "Edit" feature to update its stock instead.',
-            'unit.in' => 'Please select a valid unit of measure from the provided list.',
-            'unit_price.min' => 'An item must have a real market value greater than 0.'
+            'item_name.unique' => 'Duplicate Error: This item already exists in the registry.',
+            'unit.in' => 'Error: Please select a standardized unit of measure.',
+            'physical_description.min' => 'Incomplete Data: Please be more specific with the item description.',
         ]);
 
         Supply::create($request->all());
-
-        return redirect()->route('inventory.index')->with('success', 'Item logged successfully with zero errors.');
+        return redirect()->route('inventory.index')->with('success', 'Item Verified and Registered.');
     }
 
     /**
