@@ -37,10 +37,22 @@
                     </td>
 
                     <td class="text-center">
-                        <span class="badge {{ $req->request_type == 'major' ? 'bg-warning-subtle text-warning border border-warning' : 'bg-info-subtle text-info border border-info' }} rounded-pill" style="font-size: 9px;">
-                            {{ strtoupper($req->request_type) }}
-                        </span>
-                    </td>
+                    @php
+                        // Standardized Color Logic
+                        $statusClass = 'status-approved';
+                        if($req->status == 'pending') $statusClass = 'status-pending';
+                        if($req->status == 'released') $statusClass = 'status-released';
+                        if($req->status == 'rejected') $statusClass = 'status-rejected';
+
+                        // Identify if it's nearing deadline even in history
+                        $isNearDeadline = $req->updated_at <= now()->subDays(2) && !in_array($req->status, ['released', 'rejected']);
+                        if($isNearDeadline) $statusClass = 'status-deadline';
+                    @endphp
+
+                    <span class="badge {{ $statusClass }} text-uppercase px-3 py-2 rounded-pill" style="font-size: 8px;">
+                        {{ str_replace('_', ' ', $req->status) }}
+                    </span>
+                </td>
 
                     <td class="text-end fw-bold text-dark">₱{{ number_format($req->grand_total, 2) }}</td>
 

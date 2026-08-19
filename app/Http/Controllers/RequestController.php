@@ -15,29 +15,52 @@ class RequestController extends Controller
     /**
      * Requisition History / Archive
      */
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
 
-        // 1. Start the query with relationships loaded
+        // 1. Base Query with Relationships
         $query = \App\Models\Requisition::with(['items', 'user']);
 
-        // 2. PRIVACY FILTER:
-        // If NOT SMO, only show records belonging to the logged-in user
+        // 2. PRIVACY FILTER: If not SMO, only show own records
         if ($user->role !== 'smo') {
             $query->where('user_id', $user->id);
         }
-        // If user is SMO, the query remains unfiltered (sees everyone)
 
-        // 3. Fetch data and split into the two vertical sections
-        $all = $query->latest()->get();
+        // 3. MULTI-FILTER ENGINE
+        // Filter by Status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Filter by Department (SMO Only)
+        if ($user->role == 'smo' && $request->filled('dept')) {
+            $query->whereHas('user', function($q) use ($request) {
+                $q->where('department', $request->dept);
+            });
+        }
+
+        // Filter by Date Range
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        // 4. Multi-Directional Sorting
+        $sort = $request->get('sort', 'created_at');
+        $order = $request->get('order', 'desc');
+        $query->orderBy($sort, $order);
+
+        // 5. Paginate and Split for the Vertical View
+        $all = $query->get();
 
         $activeRequests = $all->whereNotIn('status', ['released', 'rejected']);
         $completedRequests = $all->whereIn('status', ['released', 'rejected']);
 
         return view('requests.index', compact('activeRequests', 'completedRequests'));
     }
-
     /**
      * Admin/Signatory Approval Queue
      */

@@ -56,6 +56,41 @@ Route::get('/dashboard', function () {
             ->latest()
             ->get();
 
+                $query = Requisition::with(['items', 'user']);
+
+        // 1. Multi-Filter Logic
+        // Filter by Status
+        if (request('status')) {
+            if (request('status') === 'near_deadline') {
+                $query->whereIn('status', ['approved_president', 'approved_vp'])
+                      ->where('updated_at', '<=', now()->subDays(2));
+            } else {
+                $query->where('status', request('status'));
+            }
+        }
+
+        // Filter by Department
+        if (request('dept')) {
+            $query->whereHas('user', function($q) {
+                $q->where('department', request('dept'));
+            });
+        }
+
+        // Filter by Date Range
+        if (request('date_from')) {
+            $query->whereDate('created_at', '>=', request('date_from'));
+        }
+        if (request('date_to')) {
+            $query->whereDate('created_at', '<=', request('date_to'));
+        }
+
+        // 2. Multi-Directional Sorting
+        $sort = request('sort', 'created_at');
+        $order = request('order', 'desc');
+        $query->orderBy($sort, $order);
+
+        $allStaffRequests = $query->get();
+
         $recentActivity = \App\Models\Notification::where('user_id', $user->id)->latest()->take(5)->get();
     }
 
