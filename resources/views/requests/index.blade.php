@@ -47,7 +47,9 @@
                             <option value="">All Depts</option>
                             <option value="CETE" {{ request('dept') == 'CETE' ? 'selected' : '' }}>CETE</option>
                             <option value="CTE" {{ request('dept') == 'CTE' ? 'selected' : '' }}>CTE</option>
-                            <option value="CBA" {{ request('dept') == 'CBA' ? 'selected' : '' }}>CBA</option>
+                            <option value="CBMA" {{ request('dept') == 'CBMA' ? 'selected' : '' }}>CBMA</option>
+                            <option value="CCJE" {{ request('dept') == 'CCJE' ? 'selected' : '' }}>CCJE</option>
+                            <option value="CAS" {{ request('dept') == 'CAS' ? 'selected' : '' }}>CAS</option>
                         </select>
                     </div>
                     @endif

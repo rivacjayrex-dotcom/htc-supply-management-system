@@ -20,14 +20,13 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
-        'email',
-        'password',
-        'school_id',    // Ensure this is here
-        'role',         // Ensure this is here
-        'is_approved',  // Ensure this is here
-        'profile_photo',
         'username',
-        'department',
+        'school_id',
+        'department', // Add this
+        'email',      // We will keep this in DB for system reasons, but hide from UI
+        'password',
+        'role',
+        'is_approved',
     ];
 
     /**

@@ -210,7 +210,8 @@ class RequestController extends Controller
 
         // 1. Data for SMO (Critical Deadlines)
         $criticalRequests = ($user->role == 'smo')
-            ? \App\Models\Requisition::whereIn('status', ['approved_president', 'approved_vp'])
+            ? \App\Models\Requisition::with('items') // <--- ADD .with('items') HERE
+                ->whereIn('status', ['approved_president', 'approved_vp'])
                 ->where('updated_at', '<=', now()->subDays(2))->get()
             : [];
 

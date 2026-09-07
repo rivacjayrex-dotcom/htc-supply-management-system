@@ -38,18 +38,19 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'username' => ['required', 'string', 'max:255', 'unique:users'],
             'school_id' => ['required', 'string', 'max:255', 'unique:users'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'department' => ['required', 'string'],
+            'password' => ['required', 'confirmed', 'min:8'],
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'username' => $request->username,
             'school_id' => $request->school_id,
-            'email' => $request->email,
+            'department' => $request->department,
+            'email' => $request->username . '@htc.local', // Internal unique ID instead of Gmail
             'password' => Hash::make($request->password),
-            'role' => 'employee', // Default role
-            'is_approved' => false, // Ensure this is false!
+            'role' => 'employee',
+            'is_approved' => false,
         ]);
 
         // 1. Send Notification to SMO

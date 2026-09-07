@@ -29,7 +29,6 @@
                     <!-- END OF UPDATE -->
 
                     <td>
-                        <span class="fw-semibold">{{ $req->items->first()->item_name }}</span>
                         @if($req->items->count() > 1)
                             <span class="text-muted small"> (+{{ $req->items->count() - 1 }} others)</span>
                         @endif

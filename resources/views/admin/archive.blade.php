@@ -4,49 +4,6 @@
     </x-slot>
 
     <div class="container-fluid py-2">
-        <!-- TOP STATS: ARCHIVE OVERVIEW -->
-        <div class="row g-3 mb-4">
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
-                    <div class="d-flex align-items-center">
-                        <div class="p-2 rounded-3 bg-primary-subtle text-primary me-3">
-                            <i data-lucide="calendar-check" style="width:20px"></i>
-                        </div>
-                        <div>
-                            <small class="text-muted fw-bold uppercase" style="font-size: 9px;">Released Today</small>
-                            <h5 class="fw-black mb-0">{{ $stats['today_count'] }} Requisitions</h5>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
-                    <div class="d-flex align-items-center">
-                        <div class="p-2 rounded-3 bg-success-subtle text-success me-3">
-                            <i data-lucide="banknote" style="width:20px"></i>
-                        </div>
-                        <div>
-                            <small class="text-muted fw-bold uppercase" style="font-size: 9px;">Weekly Value</small>
-                            <h5 class="fw-black mb-0">₱{{ number_format($stats['week_val'], 2) }}</h5>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card border-0 shadow-sm rounded-4 p-3 bg-dark text-white">
-                    <div class="d-flex align-items-center">
-                        <div class="p-2 rounded-3 bg-white bg-opacity-10 text-white me-3">
-                            <i data-lucide="layers" style="width:20px"></i>
-                        </div>
-                        <div>
-                            <small class="text-white-50 fw-bold uppercase" style="font-size: 9px;">Monthly Volume</small>
-                            <h5 class="fw-black mb-0">{{ $stats['month_count'] }} Items Moved</h5>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- FILTER BAR -->
         <div class="card border-0 shadow-sm rounded-4 mb-4">
             <div class="card-body p-3 d-flex justify-content-between align-items-center">

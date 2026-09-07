@@ -415,8 +415,15 @@
                 </a>
                 @if(Auth::user()->role == 'smo')
                     <div class="nav-section-label">Institutional Reports</div>
-                    <a href="{{ route('admin.reports') }}" class="nav-link-custom {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
+
+                    <!-- Link to the Dashboard with Charts -->
+                    <a href="{{ route('admin.reports.analytics') }}" class="nav-link-custom {{ request()->routeIs('admin.reports.analytics') ? 'active' : '' }}">
                         <i data-lucide="pie-chart"></i> Operations Analytics
+                    </a>
+
+                    <!-- Link to the Filterable Report Builder (The one the Dean wants) -->
+                    <a href="{{ route('admin.reports.index') }}" class="nav-link-custom {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}">
+                        <i data-lucide="printer"></i> Report Builder
                     </a>
                 @endif
 
@@ -846,7 +853,7 @@
                         name: '',
                         specs: '',
                         qty: 1,
-                        unit: 'pc',
+                        unit: 'PC/PCS',
                         price: 0,
                         is_manual: true
                     });

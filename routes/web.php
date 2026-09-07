@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Requisition;
+use App\Http\Controllers\ReportController;
 
 
 // Welcome Page
@@ -161,7 +162,17 @@ Route::get('/dashboard', function () {
     Route::delete('/requisitions/{id}', [RequisitionController::class, 'destroy'])->name('requisitions.destroy');
 
     //Statistics and Reports Page
-    Route::get('/admin/reports', [App\Http\Controllers\ReportController::class, 'index'])->name('admin.reports');
+    // SMO REPORTING & ANALYTICS
+    Route::middleware(['auth', 'role:smo'])->group(function () {
+        // 1. The Dashboard/Charts page
+        Route::get('/admin/reports/analytics', [ReportController::class, 'index'])->name('admin.reports.analytics');
+
+        // 2. The Filterable Report Builder page
+        Route::get('/admin/reports/builder', [ReportController::class, 'generate'])->name('admin.reports.index');
+
+        // 3. The Actual Filtering/PDF Logic
+        Route::get('/admin/reports/generate', [ReportController::class, 'generate'])->name('admin.reports.generate');
+    });
 
     //Archive Page route
     Route::get('/admin/archive', [App\Http\Controllers\ArchiveController::class, 'index'])->name('admin.archive');

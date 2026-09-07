@@ -65,11 +65,23 @@
                                     <input type="number" name="quantity" class="form-control border-0 bg-light py-2" value="0" required>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label mini-label">Unit <span class="text-danger">*</span></label>
-                                    <select name="unit" class="form-select border-0 bg-light py-2" required>
-                                        <option value="">-- Unit --</option>
-                                        <option>Ream</option><option>Box</option><option>Piece</option>
-                                        <option>Set</option><option>Roll</option><option>Bottle</option>
+                                    <label class="form-label small fw-bold text-dark text-uppercase">Unit <span class="text-danger">*</span></label>
+                                    <select name="unit" class="form-select border-0 bg-light py-2 rounded-3 shadow-none" required>
+                                        <option value="">-- Select Unit --</option>
+                                        <option value="Bottle" {{ old('unit', $item->unit ?? '') == 'Bottle' ? 'selected' : '' }}>Bottle</option>
+                                        <option value="Box(es)" {{ old('unit', $item->unit ?? '') == 'Box(es)' ? 'selected' : '' }}>Box(es)</option>
+                                        <option value="Can(s)" {{ old('unit', $item->unit ?? '') == 'Can(s)' ? 'selected' : '' }}>Can(s)</option>
+                                        <option value="Gallon(s)" {{ old('unit', $item->unit ?? '') == 'Gallon(s)' ? 'selected' : '' }}>Gallon(s)</option>
+                                        <option value="Kilogram(s)" {{ old('unit', $item->unit ?? '') == 'Kilogram(s)' ? 'selected' : '' }}>Kilogram(s)</option>
+                                        <option value="Liter(s)" {{ old('unit', $item->unit ?? '') == 'Liter(s)' ? 'selected' : '' }}>Liter(s)</option>
+                                        <option value="Meter(s)" {{ old('unit', $item->unit ?? '') == 'Meter(s)' ? 'selected' : '' }}>Meter(s)</option>
+                                        <option value="Pack(s)" {{ old('unit', $item->unit ?? '') == 'Pack(s)' ? 'selected' : '' }}>Pack(s)</option>
+                                        <option value="PC/PCS" {{ old('unit', $item->unit ?? '') == 'PC/PCS' ? 'selected' : '' }}>PC/PCS</option>
+                                        <option value="Piece(s)" {{ old('unit', $item->unit ?? '') == 'Piece(s)' ? 'selected' : '' }}>Piece(s)</option>
+                                        <option value="Ream(s)" {{ old('unit', $item->unit ?? '') == 'Ream(s)' ? 'selected' : '' }}>Ream(s)</option>
+                                        <option value="Roll(s)" {{ old('unit', $item->unit ?? '') == 'Roll(s)' ? 'selected' : '' }}>Roll(s)</option>
+                                        <option value="Set" {{ old('unit', $item->unit ?? '') == 'Set' ? 'selected' : '' }}>Set</option>
+                                        <option value="Unit(s)" {{ old('unit', $item->unit ?? '') == 'Unit(s)' ? 'selected' : '' }}>Unit(s)</option>
                                     </select>
                                 </div>
                                 <div class="col-md-3">

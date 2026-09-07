@@ -55,4 +55,38 @@ class ReportController extends Controller
 
         return view('admin.reports', compact('stats', 'costs', 'monthlyData', 'deptSpending', 'topItems'));
     }
+
+    public function generate(Request $request)
+    {
+        // 1. Start the query
+        $query = \App\Models\Requisition::with(['user', 'items']);
+
+        // 2. Apply Filters (The "Altered/Filtered" part the Dean wants)
+        if ($request->filled('dept')) {
+            $query->whereHas('user', fn($q) => $q->where('department', $request->dept));
+        }
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->date_to);
+        }
+
+        $requisitions = $query->latest()->get();
+
+        // 3. Check if user clicked "Download PDF" or just "Search"
+        if ($request->has('download')) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('admin.reports.pdf_template', [
+                'requisitions' => $requisitions,
+                'filters' => $request->all()
+            ])->setPaper('a4', 'landscape'); // Landscape is better for reports
+
+            return $pdf->download('Institutional_Report_'.now()->format('Y-m-d').'.pdf');
+        }
+
+        return view('admin.reports.index', compact('requisitions'));
+    }
 }

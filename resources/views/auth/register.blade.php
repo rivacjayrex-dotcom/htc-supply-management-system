@@ -36,29 +36,39 @@
 
                     <div class="row g-2">
                         <!-- Full Name -->
-                        <div class="col-12">
-                            <label class="form-label fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px; margin-bottom: 2px;">Full Name</label>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px;">Full Name</label>
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light border-0 text-muted"><i data-lucide="user" style="width: 12px;"></i></span>
-                                <input type="text" name="name" class="form-control bg-light border-0 shadow-none text-muted" style="font-size: 0.75rem;" placeholder="Juan Dela Cruz" value="{{ old('name') }}" required autofocus>
+                                <span class="input-group-text bg-light border-0"><i data-lucide="user" style="width: 12px;"></i></span>
+                                <input type="text" name="name" class="form-control bg-light border-0 shadow-none text-muted" placeholder="Juan Dela Cruz" required autofocus>
                             </div>
                         </div>
 
-                        <!-- Username -->
-                        <div class="col-6">
-                            <label class="form-label fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px; margin-bottom: 2px;">Username</label>
+                        <!-- Department Selection -->
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px;">Department / College</label>
                             <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light border-0 text-muted" style="font-size: 9px;">@</span>
-                                <input type="text" name="username" class="form-control bg-light border-0 shadow-none text-muted" style="font-size: 0.75rem;" placeholder="user" value="{{ old('username') }}" required>
+                                <span class="input-group-text bg-light border-0"><i data-lucide="building" style="width: 12px;"></i></span>
+                                <select name="department" class="form-select bg-light border-0 shadow-none text-muted" required style="font-size: 0.75rem;">
+                                    <option value="" selected disabled>Select your Department</option>
+                                    <option value="CTE">College of Teacher Education (CTE)</option>
+                                    <option value="CETE">College of Engineering and Tech. (CETE)</option>
+                                    <option value="CCJE">College of Crim. Justice Education (CCJE)</option>
+                                    <option value="CBMA">College of Business Mgmt. & Accountancy (CBMA)</option>
+                                    <option value="CAS">College of Arts and Sciences (CAS)</option>
+                                </select>
                             </div>
                         </div>
 
-                        <!-- School ID -->
-                        <div class="col-6">
-                            <label class="form-label fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px; margin-bottom: 2px;">School ID</label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light border-0 text-muted" style="font-size: 8px;">ID</span>
-                                <input type="text" name="school_id" class="form-control bg-light border-0 shadow-none text-muted" style="font-size: 0.75rem;" placeholder="00-00" value="{{ old('school_id') }}" required>
+                        <!-- School ID & Username (Same Row) -->
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px;">School ID</label>
+                                <input type="text" name="school_id" class="form-control form-control-sm bg-light border-0 shadow-none text-muted" placeholder="00-0000" required>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px;">Username</label>
+                                <input type="text" name="username" class="form-control form-control-sm bg-light border-0 shadow-none text-muted" placeholder="user123" required>
                             </div>
                         </div>
 

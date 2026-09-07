@@ -24,23 +24,22 @@ class SupplyController extends Controller
     // Save a new item to the database
     public function store(Request $request)
     {
-        // 1. STRICT VALIDATION
         $validated = $request->validate([
             'item_name' => 'required|string|max:255|unique:supplies,item_name',
             'brand' => 'required|string|max:100',
             'category' => 'required|in:Office Supplies,IT Equipment,Janitorial,Furniture,Laboratory',
-            'specifications' => 'required|string|min:15', // Ensuring detailed input
+            'specifications' => 'required|string|min:15',
             'quantity' => 'required|integer|min:0',
-            'unit' => 'required|string|in:Ream,Box,Piece,Set,Roll,Bottle,Pack',
+            'unit' => 'required|in:Bottle,Box(es),Can(s),Gallon(s),Kilogram(s),Liter(s),Meter(s),Pack(s),PC/PCS,Piece(s),Ream(s),Roll(s),Set,Unit(s)',
             'unit_price' => 'required|numeric|min:0.01',
             'min_stock_level' => 'required|integer|min:0',
+            'model_number' => 'nullable|string|max:100', // Added this so it doesn't get stripped out
         ], [
-            'specifications.min' => 'Incomplete Specs: Please provide more physical details as required by institutional policy.',
-            'item_name.unique' => 'Database Error: This item is already registered in the inventory.',
+            'specifications.min' => 'Incomplete Specs: Please provide more physical details (min 15 characters).',
+            'item_name.unique' => 'This item is already registered in the system.',
         ]);
 
-        // 2. CREATE DATA
-        \App\Models\Supply::create($validated);
+        Supply::create($validated);
 
         return redirect()->route('inventory.index')->with('success', 'Institutional Item Verified and Logged.');
     }
@@ -67,7 +66,7 @@ class SupplyController extends Controller
             'brand' => 'required|string',
             'category' => 'required',
             'quantity' => 'required|integer|min:0',
-            'unit' => 'required',
+            'unit' => 'required|in:Bottle,Box(es),Can(s),Gallon(s),Kilogram(s),Liter(s),Meter(s),Pack(s),PC/PCS,Piece(s),Ream(s),Roll(s),Set,Unit(s)',
             'unit_price' => 'required|numeric|min:0',
             'min_stock_level' => 'required|integer|min:0',
         ]);

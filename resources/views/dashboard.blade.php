@@ -80,7 +80,7 @@
                         <div class="card-header bg-white border-0 p-4 pb-2">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h6 class="fw-bold mb-0">Institutional Queue Management</h6>
-                                <div class="card-header bg-white border-0 p-0 d-flex align-items-center gap-2">
+                                <div class="card-header bg-white border-0 p-0 d-flex align-items-right gap-0">
                                     <a href="{{ route('requests.index') }}" class="text-decoration-none fw-bold small text-success">View Full Requisition →</a>
                                 </div>
                                 <div class="d-flex gap-2">
@@ -105,7 +105,9 @@
                                         <option value="">All Departments</option>
                                         <option value="CETE" {{ request('dept') == 'CETE' ? 'selected' : '' }}>CETE</option>
                                         <option value="CTE" {{ request('dept') == 'CTE' ? 'selected' : '' }}>CTE</option>
-                                        <option value="CBA" {{ request('dept') == 'CBA' ? 'selected' : '' }}>CBA</option>
+                                        <option value="CBMA" {{ request('dept') == 'CBMA' ? 'selected' : '' }}>CBMA</option>
+                                        <option value="CCJE" {{ request('dept') == 'CCJE' ? 'selected' : '' }}>CCJE</option>
+                                        <option value="CAS" {{ request('dept') == 'CAS' ? 'selected' : '' }}>CAS</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
