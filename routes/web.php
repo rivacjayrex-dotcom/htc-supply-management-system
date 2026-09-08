@@ -176,3 +176,5 @@ Route::get('/dashboard', function () {
 
     //Archive Page route
     Route::get('/admin/archive', [App\Http\Controllers\ArchiveController::class, 'index'])->name('admin.archive');
+
+    Route::get('/admin/users/manage', [ProfileController::class, 'manageUsers'])->name('admin.users.manage');

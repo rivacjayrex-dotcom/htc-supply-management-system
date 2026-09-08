@@ -86,19 +86,30 @@ class ProfileController extends Controller
             return view('admin.pending-users', compact('users'));
         }
 
-    public function approveUser($id) {
+    public function approveUser(Request $request, $id)
+    {
         $user = \App\Models\User::findOrFail($id);
-        $user->update(['is_approved' => true]);
 
-        // Notify the user via the internal system (they will see it when they log in)
+        // 1. Assign the role chosen by the SMO
+        // 2. Set is_approved to true
+        $user->update([
+            'role' => $request->role,
+            'is_approved' => true
+        ]);
+
         \App\Models\Notification::create([
             'user_id' => $user->id,
-            'title' => 'Account Approved',
-            'message' => 'Welcome to HTC Supply System! Your account is now active.',
-            'icon' => 'check-circle',
+            'title' => 'Account Activated',
+            'message' => "Your account has been verified as {$request->role}. You now have full system access.",
+            'icon' => 'shield-check',
             'type' => 'success'
         ]);
 
-        return back()->with('success', "Access granted to {$user->name}.");
+        return back()->with('success', "Access granted. {$user->name} is now registered as " . strtoupper($request->role));
+    }
+
+    public function manageUsers() {
+        $users = \App\Models\User::where('is_approved', true)->get();
+        return view('admin.manage-users', compact('users'));
     }
 }

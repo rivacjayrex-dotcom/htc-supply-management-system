@@ -34,7 +34,7 @@
                 <form method="POST" action="{{ route('register') }}">
                     @csrf
 
-                    <div class="row g-2">
+                    <div class="row g-1">
                         <!-- Full Name -->
                         <div class="mb-2">
                             <label class="form-label small fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px;">Full Name</label>

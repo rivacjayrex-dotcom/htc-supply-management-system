@@ -69,15 +69,18 @@ class RequestController extends Controller
         $user = Auth::user();
 
         $pendingRequests = Requisition::with(['items', 'user'])
-            // 1. Dept Head sees brand new ones
-            ->when($user->role == 'dept_head', function($q) {
-                return $q->where('status', 'pending');
+            // DEPT HEAD FILTERING: Only show requests from the same department
+            ->when($user->role == 'dept_head', function($q) use ($user) {
+                return $q->where('status', 'pending')
+                        ->whereHas('user', function($u) use ($user) {
+                            $u->where('department', $user->department);
+                        });
             })
-            // 2. VP FINANCE sees MINOR requests approved by Dept Head
+            // VP FINANCE: Sees only MINOR from any department (after Dept Head approves)
             ->when($user->role == 'vp_finance', function($q) {
                 return $q->where('status', 'approved_dept')->where('request_type', 'minor');
             })
-            // 3. VP ADMIN sees MAJOR requests approved by Dept Head
+            // VP ADMIN: Sees only MAJOR from any department
             ->when($user->role == 'vp_admin', function($q) {
                 return $q->where('status', 'approved_dept')->where('request_type', 'major');
             })

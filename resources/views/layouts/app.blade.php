@@ -435,18 +435,22 @@
                 @endif
 
                 @if(Auth::user()->role == 'smo')
+                    <div class="nav-section-label">System Administration</div>
+                    <a href="{{ route('admin.users.pending') }}" class="nav-link-custom {{ request()->routeIs('admin.users.pending') ? 'active' : '' }}">
+                        <i data-lucide="user-plus"></i> Access Requests
+                    </a>
+                    <a href="{{ route('admin.users.manage') }}" class="nav-link-custom {{ request()->routeIs('admin.users.manage') ? 'active' : '' }}">
+                        <i data-lucide="users"></i> Manage Personnel
+                    </a>
+                @endif
+
+                @if(Auth::user()->role == 'smo')
                     <div class="nav-section-label">Inventory & Logistics</div>
                     <a href="{{ route('admin.approvals') }}" class="nav-link-custom {{ request()->routeIs('admin.approvals') ? 'active' : '' }}">
                         <i data-lucide="truck"></i> Release Queue
                     </a>
                     <a href="{{ route('inventory.index') }}" class="nav-link-custom {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
                         <i data-lucide="package"></i> Manage Stock
-                    </a>
-                @endif
-
-                @if(Auth::user()->role == 'smo')
-                    <a href="{{ route('admin.users.pending') }}" class="nav-link-custom {{ request()->routeIs('admin.users.pending') ? 'active' : '' }}">
-                        <i data-lucide="users"></i> User Requests
                     </a>
                 @endif
             </div>
