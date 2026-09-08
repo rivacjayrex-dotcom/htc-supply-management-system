@@ -44,6 +44,38 @@
         .brand-logo { width: 45px; height: 45px; object-fit: contain; margin-right: 12px; }
         .brand-title { font-size: 0.95rem; font-weight: 800; letter-spacing: 0.5px; line-height: 1.2; color: var(--htc-green); text-transform: uppercase; }
 
+        /* This is the magic part: the middle section scrolls, top and bottom stay fixed */
+        .sidebar .flex-grow-1 {
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 5px; /* Space for the scrollbar */
+            margin-right: -5px; /* Keeps the links aligned */
+        }
+
+        /* Optional: Make the sidebar scrollbar very thin and modern */
+        .sidebar .flex-grow-1::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sidebar .flex-grow-1::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sidebar .flex-grow-1::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .sidebar .flex-grow-1::-webkit-scrollbar-thumb:hover {
+            background: var(--htc-green);
+        }
+
+        /* Ensure the bottom button area stays at the bottom and has a solid background */
+        .sidebar-footer {
+            padding-top: 1rem;
+            margin-top: auto;
+            border-top: 1px solid #f1f5f9;
+            background: white;
+            z-index: 10;
+        }
+
         .nav-section-label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin: 1.5rem 0 0.75rem 0.75rem; }
         .nav-link-custom { display: flex; align-items: center; padding: 0.6rem 0.85rem; color: #64748b; text-decoration: none; border-radius: 12px; margin-bottom: 4px; font-weight: 500; font-size: 0.85rem; transition: all 0.2s ease; }
         .nav-link-custom:hover { background-color: var(--htc-light-green); color: var(--htc-green); transform: translateX(4px); }
@@ -455,10 +487,15 @@
                 @endif
             </div>
 
-            <div class="pt-4 mt-auto border-top">
+            <div class="sidebar-footer">
                 <button type="button" class="btn btn-new-request w-100 shadow-sm" data-bs-toggle="modal" data-bs-target="#globalRequestModal">
                     + NEW REQUISITION
                 </button>
+
+                <!-- Document ID or Version Note (Optional extra detail) -->
+                <div class="text-center mt-2">
+                    <small class="text-muted" style="font-size: 9px; opacity: 0.5;">v1.0.80 Alpha</small>
+                </div>
             </div>
         </aside>
 
