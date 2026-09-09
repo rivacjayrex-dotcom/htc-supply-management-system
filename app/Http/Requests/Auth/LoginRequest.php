@@ -40,7 +40,7 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        // 1. Find user by either Email OR School ID
+        // 1. Find user by either Email OR School ID OR Username
         $user = User::where('username', $this->login)
                     ->orWhere('school_id', $this->login)
                     ->first();
@@ -95,6 +95,7 @@ class LoginRequest extends FormRequest
      */
     public function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());
+        // FIX: Use 'login' instead of 'email' so rate limiting tracks by the entered username or school_id
+        return Str::transliterate(Str::lower($this->string('login')).'|'.$this->ip());
     }
 }

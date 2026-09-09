@@ -61,52 +61,74 @@ class RequestController extends Controller
 
         return view('requests.index', compact('activeRequests', 'completedRequests'));
     }
-    /**
+
+
+/**
      * Admin/Signatory Approval Queue
      */
     public function adminIndex()
     {
         $user = Auth::user();
 
-        $pendingRequests = Requisition::with(['items', 'user'])
-            // DEPT HEAD FILTERING: Only show requests from the same department
-            ->when($user->role == 'dept_head', function($q) use ($user) {
-                return $q->where('status', 'pending')
-                        ->whereHas('user', function($u) use ($user) {
-                            $u->where('department', $user->department);
-                        });
-            })
-            // VP FINANCE: Sees only MINOR from any department (after Dept Head approves)
-            ->when($user->role == 'vp_finance', function($q) {
-                return $q->where('status', 'approved_dept')->where('request_type', 'minor');
-            })
-            // VP ADMIN: Sees only MAJOR from any department
-            ->when($user->role == 'vp_admin', function($q) {
-                return $q->where('status', 'approved_dept')->where('request_type', 'major');
-            })
-            // 4. Provost sees MAJOR requests approved by VP Admin
-            ->when($user->role == 'provost', function($q) {
-                return $q->where('status', 'approved_vp')->where('request_type', 'major');
-            })
-            // 5. President sees MAJOR requests approved by Provost
-            ->when($user->role == 'president', function($q) {
-                return $q->where('status', 'approved_provost');
-            })
-            // 6. SMO FIX:
-            // SMO sees ANYTHING that is 'approved_president' (Major OR President-submitted Minor)
-            // OR anything 'approved_vp' that is 'minor' (Standard Minor path)
-            ->when($user->role == 'smo', function($q) {
-                return $q->where(function($query) {
-                    $query->where('status', 'approved_president')
-                        ->orWhere(function($sub) {
-                            $sub->where('status', 'approved_vp')->where('request_type', 'minor');
-                        });
-                });
-            })
-            ->latest()->get();
+        $query = Requisition::with(['items', 'user']);
 
-        // SMO TABS SPLITTING
-        if ($user->role == 'smo') {
+        switch ($user->role) {
+            case 'dept_head':
+                // Department Head sees only pending requests from their own department
+                $query->where('status', 'pending')
+                      ->whereHas('user', function ($u) use ($user) {
+                          $u->where('department', $user->department);
+                      });
+                break;
+
+            case 'vp_finance':
+                // VP Finance sees MINOR requests approved by Dept Head
+                $query->where('status', 'approved_dept')
+                      ->where('request_type', 'minor');
+                break;
+
+            case 'vp_admin':
+                // VP Admin sees MAJOR requests approved by Dept Head
+                $query->where('status', 'approved_dept')
+                      ->where('request_type', 'major');
+                break;
+
+            case 'provost':
+                // Provost sees MAJOR requests endorsed by VP Admin
+                $query->where('status', 'approved_vp')
+                      ->where('request_type', 'major');
+                break;
+
+            case 'president':
+                // President sees MAJOR requests recommended by Provost
+                $query->where('status', 'approved_provost')
+                      ->where('request_type', 'major');
+                break;
+
+            case 'smo':
+                // SMO sees fully approved requests ready for fulfillment:
+                // - Minor requests approved by VP Finance ('approved_vp')
+                // - Major requests approved by President ('approved_president')
+                $query->where(function ($q) {
+                    $q->where(function ($sub) {
+                        $sub->where('request_type', 'minor')
+                            ->where('status', 'approved_vp');
+                    })->orWhere(function ($sub) {
+                        $sub->where('status', 'approved_president');
+                    });
+                });
+                break;
+
+            default:
+                // Other roles or employees have no approval duties
+                $query->whereRaw('1 = 0');
+                break;
+        }
+
+        $pendingRequests = $query->latest()->get();
+
+        // If user is SMO, separate into tabs for Minor and Major
+        if ($user->role === 'smo') {
             $pendingMinor = $pendingRequests->where('request_type', 'minor');
             $pendingMajor = $pendingRequests->where('request_type', 'major');
 
@@ -119,33 +141,58 @@ class RequestController extends Controller
     /**
      * Update Approval Status (Signatories)
      */
+/**
+     * Update Approval Status (Signatories)
+     */
     public function updateStatus(Request $request, $id)
     {
+        $request->validate([
+            'status'  => 'required|in:approved,rejected',
+            'remarks' => 'nullable|string|max:1000',
+        ]);
+
         $sr = Requisition::with('items')->findOrFail($id);
         $role = Auth::user()->role;
+
+        // Map system role to a clean, readable title for logging
+        $roleTitles = [
+            'dept_head'  => 'Department Head',
+            'vp_finance' => 'VP for Finance',
+            'vp_admin'   => 'VP for Administration',
+            'provost'    => 'School Provost',
+            'president'  => 'School President',
+            'smo'        => 'SMO In-Charge',
+        ];
+        $position = $roleTitles[$role] ?? ucwords(str_replace('_', ' ', $role));
 
         $sr->remarks = $request->remarks;
 
         if ($request->status == 'rejected') {
             $sr->status = 'rejected';
         } else {
-            // Updated logic to recognize specific VP roles
+            // State progression based on signatory hierarchy
             if ($role == 'dept_head') {
                 $sr->status = 'approved_dept';
-            }
-            elseif ($role == 'vp_finance' || $role == 'vp_admin') {
-                // Both VPs set the status to approved_vp when they sign off
+            } elseif ($role == 'vp_finance' || $role == 'vp_admin') {
                 $sr->status = 'approved_vp';
-            }
-            elseif ($role == 'provost') {
+            } elseif ($role == 'provost') {
                 $sr->status = 'approved_provost';
-            }
-            elseif ($role == 'president') {
+            } elseif ($role == 'president') {
                 $sr->status = 'approved_president';
             }
         }
 
-        // Notification logic
+        $sr->save();
+
+        // Log the approval action
+        \App\Models\ApprovalLog::create([
+            'requisition_id' => $sr->id,
+            'action'         => ($request->status == 'approved' ? 'Approved' : 'Rejected') . ' by ' . $position,
+            'role'           => $role,
+            'remarks'        => $request->remarks,
+        ]);
+
+        // Send notification to the requisition owner
         $itemName = $sr->items->first()->item_name ?? 'Items';
         $statusLabel = str_replace('_', ' ', $sr->status);
 
@@ -156,15 +203,6 @@ class RequestController extends Controller
             $request->status == 'approved' ? 'check-circle' : 'x-circle',
             $request->status == 'approved' ? 'success' : 'danger'
         );
-
-        $sr->save();
-
-        \App\Models\ApprovalLog::create([
-            'requisition_id' => $sr->id,
-            'action' => ($request->status == 'approved' ? 'Approved' : 'Rejected') . ' by ' . $position,
-            'role' => $role,
-            'remarks' => $request->remarks
-        ]);
 
         return redirect()->route('admin.approvals')->with('success', 'Status updated successfully.');
     }

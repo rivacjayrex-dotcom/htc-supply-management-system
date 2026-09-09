@@ -24,7 +24,7 @@
             </div>
 
             <!-- RIGHT SIDE: REGISTRATION FORM (Extra Compact) -->
-            <div class="col-md-7 d-flex flex-column justify-content-start p-4 bg-white h-100 shadow-inner">
+            <div class="col-md-7 d-flex flex-column justify-content-start p-3 bg-white h-100 shadow-inner">
 
                 <div class="mb-2 mt-1">
                     <h3 class="fw-black text-uppercase tracking-tighter m-0" style="font-size: 1.2rem; color: #1a1a1a;"><b>REQUEST ACCESS</b></h3>
@@ -72,7 +72,7 @@
                             </div>
                         </div>
 
-                        <!-- Email Address -->
+                        <!-- Email Addresssss -->
                         <div class="col-12">
                             <label class="form-label fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px; margin-bottom: 2px;">Institutional Email</label>
                             <div class="input-group input-group-sm">
@@ -81,7 +81,7 @@
                             </div>
                         </div>
 
-                        <!-- Password Row -->
+                        <!-- Password Rowwwww -->
                         <div class="col-6">
                             <label class="form-label fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px; margin-bottom: 2px;">Password</label>
                             <div class="input-group input-group-sm">

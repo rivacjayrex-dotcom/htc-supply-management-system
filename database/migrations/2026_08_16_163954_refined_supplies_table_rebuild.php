@@ -10,27 +10,28 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
-        Schema::create('supplies', function (Blueprint $table) {
-            $table->id();
-            $table->string('item_name')->unique();
-            $table->string('brand');
-            $table->string('model_number')->nullable();
-            $table->string('category'); // Office, IT, Lab, Furniture, Janitorial
-            $table->text('specifications'); // Technical details
-            $table->integer('quantity')->default(0);
-            $table->string('unit'); // Ream, Box, Piece, etc.
-            $table->decimal('unit_price', 15, 2);
-            $table->integer('min_stock_level')->default(5);
-            $table->timestamps();
-        });
-    }
+        {
+            // 1. Drop the old table first so it doesn't give a "table already exists" error
+            Schema::dropIfExists('supplies');
 
-    /**
-     * Reverse the migrations.
-     */
+            // 2. Now recreate it cleanly with all columns
+            Schema::create('supplies', function (Blueprint $table) {
+                $table->id();
+                $table->string('item_name')->unique();
+                $table->string('brand')->nullable();
+                $table->string('model_number')->nullable();
+                $table->string('category');
+                $table->text('specifications')->nullable();
+                $table->integer('quantity')->default(0);
+                $table->string('unit');
+                $table->decimal('unit_price', 15, 2);
+                $table->integer('min_stock_level')->default(5);
+                $table->timestamps();
+            });
+        }
+
     public function down(): void
     {
-        //
+       Schema::dropIfExists('supplies');
     }
 };
