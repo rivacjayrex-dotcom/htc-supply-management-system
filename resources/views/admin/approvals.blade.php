@@ -11,6 +11,13 @@
             </div>
         @endif
 
+        @if(session('error'))
+            <div class="alert alert-danger border-0 shadow-sm mb-4 rounded-4 d-flex align-items-center">
+                <i data-lucide="alert-triangle" class="me-2" style="width: 20px;"></i>
+                <div>{{ session('error') }}</div>
+            </div>
+        @endif
+
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
             <div class="card-header bg-white border-0 p-4">
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -204,10 +211,13 @@
                     this.requestorName = name;
                     this.requestorDept = dept;
 
-                    const modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+                    const modalEl = document.getElementById('reviewModal');
+                    const modal = new bootstrap.Modal(modalEl);
                     modal.show();
 
-                    setTimeout(() => lucide.createIcons(), 150);
+                    // Re-render icons on show and after Alpine transitions complete
+                    setTimeout(() => lucide.createIcons(), 100);
+                    setTimeout(() => lucide.createIcons(), 300);
                 }
             }
         }

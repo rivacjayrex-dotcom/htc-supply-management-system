@@ -234,6 +234,9 @@ class RequestController extends Controller
 /**
      * SMO Confirmation & Release (Fulfillment)
      */
+    /**
+     * SMO Confirmation & Release (Fulfillment)
+     */
     public function releaseRequest($id)
     {
         $sr = Requisition::with('items')->findOrFail($id);
@@ -249,37 +252,39 @@ class RequestController extends Controller
         }
 
         return DB::transaction(function () use ($sr) {
-            // STEP A: Pre-validation Check (Check all items before deducting any stock)
+            $deductedItems = [];
+
+            // Check and deduct items that exist in our inventory catalog
             foreach ($sr->items as $item) {
-                $inventoryItem = Supply::where('item_name', $item->item_name)->first();
+                // Look for matching item name (case-insensitive)
+                $inventoryItem = Supply::where('item_name', 'LIKE', trim($item->item_name))->first();
 
-                if (!$inventoryItem) {
-                    return back()->with('error', "Cannot release: Item '{$item->item_name}' is not found in the inventory database.");
-                }
-
-                if ($inventoryItem->quantity < $item->quantity) {
-                    return back()->with('error', "Insufficient stock for '{$item->item_name}'. Available: {$inventoryItem->quantity}, Requested: {$item->quantity}.");
+                if ($inventoryItem) {
+                    if ($inventoryItem->quantity < $item->quantity) {
+                        return back()->with('error', "Insufficient stock for '{$item->item_name}'. Available: {$inventoryItem->quantity}, Requested: {$item->quantity}.");
+                    }
+                    $inventoryItem->decrement('quantity', $item->quantity);
+                    $deductedItems[] = "{$item->item_name} (-{$item->quantity})";
                 }
             }
 
-            // STEP B: Perform the deductions
-            foreach ($sr->items as $item) {
-                $inventoryItem = Supply::where('item_name', $item->item_name)->first();
-                $inventoryItem->decrement('quantity', $item->quantity);
-            }
-
-            // STEP C: Mark as released and log
+            // Mark Requisition as Released
             $sr->status = 'released';
             $sr->save();
+
+            // Create detailed audit log
+            $logRemarks = count($deductedItems) > 0
+                ? 'Released by SMO. Stock deducted: ' . implode(', ', $deductedItems)
+                : 'Released by SMO. Special requisition processed.';
 
             \App\Models\ApprovalLog::create([
                 'requisition_id' => $sr->id,
                 'action'         => 'Released and Fulfilled by SMO In-Charge',
                 'role'           => 'smo',
-                'remarks'        => 'All requested supplies have been deducted from inventory and prepared for release.',
+                'remarks'        => $logRemarks,
             ]);
 
-            // STEP D: Notify the requester
+            // Notify Requester
             $this->sendAlert(
                 $sr->user_id,
                 "Supplies Ready for Pickup",
@@ -288,10 +293,9 @@ class RequestController extends Controller
                 'success'
             );
 
-            return redirect()->route('admin.approvals')->with('success', "Requisition #{$sr->id} successfully released and inventory updated.");
+            return redirect()->route('admin.approvals')->with('success', "Requisition #{$sr->id} successfully confirmed and released!");
         });
     }
-
     /**
      * Notifications Center
      */

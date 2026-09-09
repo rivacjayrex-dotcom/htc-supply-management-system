@@ -18,6 +18,21 @@
                     </div>
                 </div>
 
+                <!-- ERROR ALERT BANNER -->
+                @if($errors->any())
+                    <div class="alert alert-danger border-0 shadow-sm rounded-4 mb-4 p-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <i data-lucide="alert-triangle" class="me-2 text-danger" style="width: 20px;"></i>
+                            <strong class="text-danger">Failed to save changes:</strong>
+                        </div>
+                        <ul class="mb-0 small ps-4 text-danger">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
+
                 <form action="{{ route('inventory.update', $item->id) }}" method="POST">
                     @csrf
                     @method('PATCH')

@@ -59,7 +59,7 @@ class SupplyController extends Controller
         return view('inventory.edit', compact('item'));
     }
 
-/**
+    /**
      * Save changes to an existing item
      */
     public function update(Request $request, $id)
@@ -70,20 +70,24 @@ class SupplyController extends Controller
             'item_name'       => 'required|string|max:255|unique:supplies,item_name,' . $id,
             'brand'           => 'required|string|max:100',
             'category'        => 'required|in:Office Supplies,IT Equipment,Janitorial,Furniture,Laboratory',
-            'specifications'  => 'required|string|min:15',
+            'specifications'  => 'required|string|min:3',
             'quantity'        => 'required|integer|min:0',
-            'unit'            => 'required|in:Bottle,Box(es),Can(s),Gallon(s),Kilogram(s),Liter(s),Meter(s),Pack(s),PC/PCS,Piece(s),Ream(s),Roll(s),Set,Unit(s)',
+            'unit'            => 'required|string|max:50', // Flexible string to avoid dropdown conflicts
             'unit_price'      => 'required|numeric|min:0.01',
             'min_stock_level' => 'required|integer|min:0',
             'model_number'    => 'nullable|string|max:100',
         ], [
-            'specifications.min' => 'Incomplete Specs: Please provide more physical details (min 15 characters).',
-            'item_name.unique'   => 'This item name is already registered.',
+            'item_name.unique'   => 'Another item with this name already exists in inventory.',
+            'specifications.min' => 'Please provide at least 3 characters for specifications.',
+            'category.in'        => 'Please select a valid institutional category.',
         ]);
+
+        // Keep physical_description synced if the database column exists
+        $validated['physical_description'] = $validated['specifications'];
 
         $item->update($validated);
 
-        return redirect()->route('inventory.index')->with('success', "Record for {$item->item_name} has been updated.");
+        return redirect()->route('inventory.index')->with('success', "Record for '{$item->item_name}' has been successfully updated.");
     }
 
     /**

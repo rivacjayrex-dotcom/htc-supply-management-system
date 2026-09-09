@@ -249,13 +249,6 @@
                 <h6 class="m-0 fw-bold">My Active Requisitions</h6>
                 <a href="{{ route('requests.index') }}" class="text-decoration-none fw-bold small text-success">View Full History →</a>
             </div>
-            <div class="card-header bg-white border-0 p-4">
-                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-                    <div>
-                        <h6 class="fw-bold mb-0">Institutional Queue Management</h6>
-                        <p class="text-muted extra-small mb-0">Apply filters to prioritize urgent requisitions.</p>
-                    </div>
-
                     <!-- FILTER & SORT TOOLBAR -->
                     <div class="d-flex gap-2">
                         <!-- Filter Dropdown -->
