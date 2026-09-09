@@ -67,12 +67,13 @@
                             <div class="col-6">
                                 <label class="form-label small fw-bold text-muted text-uppercase tracking-widest" style="font-size: 8px;">School ID</label>
                                 <input type="text"
+                                    id="school_id"
                                     name="school_id"
                                     value="{{ old('school_id') }}"
                                     class="form-control form-control-sm bg-light border-0 shadow-none @error('school_id') is-invalid @enderror"
                                     placeholder="00-0000-00"
-                                    pattern="[0-9]{2}-[0-9]{4}-[0-9]{2}"
-                                    title="Format: 00-0000-00 (e.g. 21-1234-56)"
+                                    maxlength="10"
+                                    autocomplete="off"
                                     required>
                                 @error('school_id') <span class="text-danger d-block mt-1" style="font-size: 10px;">{{ $message }}</span> @enderror
                             </div>
@@ -163,5 +164,41 @@
             eyeIconConfirm.setAttribute('data-lucide', isPassword ? 'eye-off' : 'eye');
             lucide.createIcons();
         });
+
+        // Automatic Masking for School ID: 00-0000-00
+        const schoolIdInput = document.getElementById('school_id');
+
+        if (schoolIdInput) {
+            schoolIdInput.addEventListener('input', function (e) {
+                // Strip any non-digit characters
+                let numbers = this.value.replace(/\D/g, '');
+
+                // Limit to max 8 digits (2 + 4 + 2)
+                if (numbers.length > 8) {
+                    numbers = numbers.substring(0, 8);
+                }
+
+                // Format with hyphens automatically
+                let formatted = '';
+                if (numbers.length > 0) {
+                    formatted = numbers.substring(0, 2);
+                }
+                if (numbers.length >= 3) {
+                    formatted += '-' + numbers.substring(2, 6);
+                }
+                if (numbers.length >= 7) {
+                    formatted += '-' + numbers.substring(6, 8);
+                }
+
+                this.value = formatted;
+            });
+
+            // Allow backspace to delete cleanly without getting stuck on a hyphen
+            schoolIdInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Backspace' && (this.value.endsWith('-'))) {
+                    this.value = this.value.slice(0, -1);
+                }
+            });
+        }
     </script>
 </x-guest-layout>

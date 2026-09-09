@@ -108,8 +108,32 @@ class ProfileController extends Controller
         return back()->with('success', "Access granted. {$user->name} is now registered as " . strtoupper($request->role));
     }
 
-    public function manageUsers() {
-        $users = \App\Models\User::where('is_approved', true)->get();
-        return view('admin.manage-users', compact('users'));
+    public function manageUsers(Request $request)
+    {
+        // Fetch all approved personnel
+        $query = \App\Models\User::where('is_approved', true);
+
+        // Optional search filter by name or ID
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('school_id', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        $allUsers = $query->orderBy('name', 'asc')->get();
+
+        // 1. Executive & Key Signatories (President, Provost, VPs, SMO)
+        $executives = $allUsers->whereIn('role', ['president', 'provost', 'vp_admin', 'vp_finance', 'smo']);
+
+        // 2. Department Heads & Deans
+        $deptHeads = $allUsers->where('role', 'dept_head');
+
+        // 3. Faculty & Staff grouped by Department
+        $employeesByDept = $allUsers->where('role', 'employee')->groupBy('department');
+
+        return view('admin.manage-users', compact('allUsers', 'executives', 'deptHeads', 'employeesByDept'));
     }
 }
