@@ -22,26 +22,32 @@ class SupplyController extends Controller
     }
 
     // Save a new item to the database
+// Save a new item to the database
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'item_name' => 'required|string|max:255|unique:supplies,item_name',
-            'brand' => 'required|string|max:100',
-            'category' => 'required|in:Office Supplies,IT Equipment,Janitorial,Furniture,Laboratory',
-            'specifications' => 'required|string|min:15',
-            'quantity' => 'required|integer|min:0',
-            'unit' => 'required|in:Bottle,Box(es),Can(s),Gallon(s),Kilogram(s),Liter(s),Meter(s),Pack(s),PC/PCS,Piece(s),Ream(s),Roll(s),Set,Unit(s)',
-            'unit_price' => 'required|numeric|min:0.01',
+            'item_name'       => 'required|string|max:255|unique:supplies,item_name',
+            'brand'           => 'required|string|max:100',
+            'category'        => 'required|in:Office Supplies,IT Equipment,Janitorial,Furniture,Laboratory',
+            'specifications'  => 'required|string|min:5', // Relaxed to min:5 so shorter specs don't fail
+            'quantity'        => 'required|integer|min:0',
+            'unit'            => 'required|in:Bottle,Box(es),Can(s),Gallon(s),Kilogram(s),Liter(s),Meter(s),Pack(s),PC/PCS,Piece(s),Ream(s),Roll(s),Set,Unit(s)',
+            'unit_price'      => 'required|numeric|min:0.01',
             'min_stock_level' => 'required|integer|min:0',
-            'model_number' => 'nullable|string|max:100',
+            'model_number'    => 'nullable|string|max:100',
         ], [
-            'specifications.min' => 'Incomplete Specs: Please provide more physical details (min 15 characters).',
-            'item_name.unique' => 'This item is already registered in the system.',
+            'item_name.unique'   => 'An item with this name already exists in the inventory.',
+            'specifications.min' => 'Specifications must be at least 5 characters.',
+            'category.in'        => 'Please choose a valid category from the list.',
+            'unit.in'            => 'Please select an authorized unit of measure.',
         ]);
 
-        Supply::create($validated);
+        // Mirror specifications into physical_description if the DB has both columns
+        $validated['physical_description'] = $validated['specifications'];
 
-        return redirect()->route('inventory.index')->with('success', 'Institutional Item Verified and Logged.');
+        \App\Models\Supply::create($validated);
+
+        return redirect()->route('inventory.index')->with('success', "Item '{$validated['item_name']}' has been registered into inventory.");
     }
 
     /**
