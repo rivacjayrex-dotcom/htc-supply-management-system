@@ -33,7 +33,7 @@ class SupplyController extends Controller
             'unit' => 'required|in:Bottle,Box(es),Can(s),Gallon(s),Kilogram(s),Liter(s),Meter(s),Pack(s),PC/PCS,Piece(s),Ream(s),Roll(s),Set,Unit(s)',
             'unit_price' => 'required|numeric|min:0.01',
             'min_stock_level' => 'required|integer|min:0',
-            'model_number' => 'nullable|string|max:100', // Added this so it doesn't get stripped out
+            'model_number' => 'nullable|string|max:100',
         ], [
             'specifications.min' => 'Incomplete Specs: Please provide more physical details (min 15 characters).',
             'item_name.unique' => 'This item is already registered in the system.',
@@ -53,27 +53,29 @@ class SupplyController extends Controller
         return view('inventory.edit', compact('item'));
     }
 
-    /**
-     * NEW: Save changes to an existing item
+/**
+     * Save changes to an existing item
      */
     public function update(Request $request, $id)
     {
         $item = Supply::findOrFail($id);
 
-        // 1. Validation (Ensures no "wrong data" gets in)
-        $request->validate([
-            'item_name' => 'required|string|max:255|unique:supplies,item_name,' . $id,
-            'brand' => 'required|string',
-            'category' => 'required',
-            'quantity' => 'required|integer|min:0',
-            'unit' => 'required|in:Bottle,Box(es),Can(s),Gallon(s),Kilogram(s),Liter(s),Meter(s),Pack(s),PC/PCS,Piece(s),Ream(s),Roll(s),Set,Unit(s)',
-            'unit_price' => 'required|numeric|min:0',
+        $validated = $request->validate([
+            'item_name'       => 'required|string|max:255|unique:supplies,item_name,' . $id,
+            'brand'           => 'required|string|max:100',
+            'category'        => 'required|in:Office Supplies,IT Equipment,Janitorial,Furniture,Laboratory',
+            'specifications'  => 'required|string|min:15',
+            'quantity'        => 'required|integer|min:0',
+            'unit'            => 'required|in:Bottle,Box(es),Can(s),Gallon(s),Kilogram(s),Liter(s),Meter(s),Pack(s),PC/PCS,Piece(s),Ream(s),Roll(s),Set,Unit(s)',
+            'unit_price'      => 'required|numeric|min:0.01',
             'min_stock_level' => 'required|integer|min:0',
+            'model_number'    => 'nullable|string|max:100',
+        ], [
+            'specifications.min' => 'Incomplete Specs: Please provide more physical details (min 15 characters).',
+            'item_name.unique'   => 'This item name is already registered.',
         ]);
 
-        // 2. The Update Call
-        // This looks at the $fillable in the model and saves everything from the form
-        $item->update($request->all());
+        $item->update($validated);
 
         return redirect()->route('inventory.index')->with('success', "Record for {$item->item_name} has been updated.");
     }

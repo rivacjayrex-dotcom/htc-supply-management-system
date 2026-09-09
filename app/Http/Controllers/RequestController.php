@@ -207,33 +207,65 @@ class RequestController extends Controller
         return redirect()->route('admin.approvals')->with('success', 'Status updated successfully.');
     }
 
-    /**
+
+/**
      * SMO Confirmation & Release (Fulfillment)
      */
     public function releaseRequest($id)
     {
-        // FIX: Requisition has multiple items, so we need to loop through them
-        return DB::transaction(function () use ($id) {
-            $sr = Requisition::with('items')->findOrFail($id);
+        $sr = Requisition::with('items')->findOrFail($id);
 
+        // 1. Guard against double-releasing
+        if ($sr->status === 'released') {
+            return back()->with('error', 'This requisition has already been released.');
+        }
+
+        // 2. Only SMO can release
+        if (Auth::user()->role !== 'smo') {
+            return back()->with('error', 'Unauthorized. Only the SMO In-Charge can release supplies.');
+        }
+
+        return DB::transaction(function () use ($sr) {
+            // STEP A: Pre-validation Check (Check all items before deducting any stock)
             foreach ($sr->items as $item) {
                 $inventoryItem = Supply::where('item_name', $item->item_name)->first();
 
-                if ($inventoryItem) {
-                    // Check if we have enough stock before releasing
-                    if ($inventoryItem->quantity < $item->quantity) {
-                        return back()->with('error', "Insufficient stock for: {$item->item_name}");
-                    }
-                    $inventoryItem->decrement('quantity', $item->quantity);
+                if (!$inventoryItem) {
+                    return back()->with('error', "Cannot release: Item '{$item->item_name}' is not found in the inventory database.");
+                }
+
+                if ($inventoryItem->quantity < $item->quantity) {
+                    return back()->with('error', "Insufficient stock for '{$item->item_name}'. Available: {$inventoryItem->quantity}, Requested: {$item->quantity}.");
                 }
             }
 
+            // STEP B: Perform the deductions
+            foreach ($sr->items as $item) {
+                $inventoryItem = Supply::where('item_name', $item->item_name)->first();
+                $inventoryItem->decrement('quantity', $item->quantity);
+            }
+
+            // STEP C: Mark as released and log
             $sr->status = 'released';
             $sr->save();
 
-            $this->sendAlert($sr->user_id, "Supplies Released", "Items for Req #{$sr->id} are ready for pickup.", 'package-check', 'success');
+            \App\Models\ApprovalLog::create([
+                'requisition_id' => $sr->id,
+                'action'         => 'Released and Fulfilled by SMO In-Charge',
+                'role'           => 'smo',
+                'remarks'        => 'All requested supplies have been deducted from inventory and prepared for release.',
+            ]);
 
-            return redirect()->route('admin.approvals')->with('success', 'Requisition confirmed and moved to archives.');
+            // STEP D: Notify the requester
+            $this->sendAlert(
+                $sr->user_id,
+                "Supplies Ready for Pickup",
+                "Your requisition #{$sr->id} has been fulfilled by the SMO and is ready for pickup.",
+                'package-check',
+                'success'
+            );
+
+            return redirect()->route('admin.approvals')->with('success', "Requisition #{$sr->id} successfully released and inventory updated.");
         });
     }
 
