@@ -80,7 +80,7 @@ class ProfileController extends Controller
             // Fetch all users where is_approved is 0 (false)
             // and exclude the SMO themselves so they don't see their own account
             $users = \App\Models\User::where('is_approved', false)
-                        ->where('id', '!=', auth()->id())
+                        ->where('id', '!=', Auth::id())
                         ->get();
 
             return view('admin.pending-users', compact('users'));

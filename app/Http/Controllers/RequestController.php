@@ -216,7 +216,7 @@ class RequestController extends Controller
         ]);
 
         // Send notification to the requisition owner
-        $itemName = $sr->items->first()->item_name ?? 'Items';
+        $itemName = $sr->items()->first()?->item_name ?? 'Items';
         $statusLabel = str_replace('_', ' ', $sr->status);
 
         $this->sendAlert(
@@ -255,7 +255,7 @@ class RequestController extends Controller
             $deductedItems = [];
 
             // Check and deduct items that exist in our inventory catalog
-            foreach ($sr->items as $item) {
+            foreach ($sr->items()->get() as $item) {
                 // Look for matching item name (case-insensitive)
                 $inventoryItem = Supply::where('item_name', 'LIKE', trim($item->item_name))->first();
 
@@ -355,7 +355,7 @@ class RequestController extends Controller
     public function getLatestNotification()
     {
         // Fetch the most recent unread notification for the user
-        $notification = \App\Models\Notification::where('user_id', auth()->id())
+        $notification = \App\Models\Notification::where('user_id', Auth::id())
             ->where('is_read', false)
             ->latest()
             ->first();
