@@ -12,35 +12,29 @@ use Illuminate\Support\Facades\DB;
 
 class RequestController extends Controller
 {
-    /**
-     * Requisition History / Archive
+ /**
+     * Active Requisitions (Pending, In-Progress, Approved)
      */
     public function index(Request $request)
     {
         $user = Auth::user();
 
-        // 1. Base Query with Relationships
-        $query = \App\Models\Requisition::with(['items', 'user']);
+        // 1. Base Query for ACTIVE ONLY
+        $query = Requisition::with(['items', 'user'])
+            ->whereNotIn('status', ['released', 'rejected']);
 
-        // 2. PRIVACY FILTER: If not SMO, only show own records
+        // 2. Privacy: Non-SMO only sees their own
         if ($user->role !== 'smo') {
             $query->where('user_id', $user->id);
         }
 
-        // 3. MULTI-FILTER ENGINE
-        // Filter by Status
+        // 3. Filters
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
-        // Filter by Department (SMO Only)
         if ($user->role == 'smo' && $request->filled('dept')) {
-            $query->whereHas('user', function($q) use ($request) {
-                $q->where('department', $request->dept);
-            });
+            $query->whereHas('user', fn($q) => $q->where('department', $request->dept));
         }
-
-        // Filter by Date Range
         if ($request->filled('date_from')) {
             $query->whereDate('created_at', '>=', $request->date_from);
         }
@@ -48,20 +42,49 @@ class RequestController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        // 4. Multi-Directional Sorting
-        $sort = $request->get('sort', 'created_at');
+        // 4. Sorting
         $order = $request->get('order', 'desc');
-        $query->orderBy($sort, $order);
+        $activeRequests = $query->orderBy('created_at', $order)->paginate(15);
 
-        // 5. Paginate and Split for the Vertical View
-        $all = $query->get();
-
-        $activeRequests = $all->whereNotIn('status', ['released', 'rejected']);
-        $completedRequests = $all->whereIn('status', ['released', 'rejected']);
-
-        return view('requests.index', compact('activeRequests', 'completedRequests'));
+        return view('requests.index', compact('activeRequests'));
     }
 
+    /**
+     * Archived Requisitions (Released & Rejected)
+     */
+    public function archive(Request $request)
+    {
+        $user = Auth::user();
+
+        // 1. Base Query for COMPLETED ONLY
+        $query = Requisition::with(['items', 'user'])
+            ->whereIn('status', ['released', 'rejected']);
+
+        // 2. Privacy: Non-SMO only sees their own
+        if ($user->role !== 'smo') {
+            $query->where('user_id', $user->id);
+        }
+
+        // 3. Filters
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+        if ($user->role == 'smo' && $request->filled('dept')) {
+            $query->whereHas('user', fn($q) => $q->where('department', $request->dept));
+        }
+        if ($request->filled('date_from')) {
+            $query->whereDate('updated_at', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('updated_at', '<=', $request->date_to);
+        }
+
+        // 4. Sorting
+        $order = $request->get('order', 'desc');
+        $archivedRequests = $query->orderBy('updated_at', $order)->paginate(15);
+
+        return view('requests.archive', compact('archivedRequests'));
+    }
 
 /**
      * Admin/Signatory Approval Queue

@@ -101,9 +101,10 @@ Route::get('/dashboard', function () {
     ));
 })->middleware(['auth'])->name('dashboard');
 
-    // EMPLOYEE REQUEST ROUTES
+// EMPLOYEE REQUEST & ARCHIVE ROUTES
     Route::middleware(['auth'])->group(function () {
         Route::get('/requests', [RequestController::class, 'index'])->name('requests.index');
+        Route::get('/requests/archive', [RequestController::class, 'archive'])->name('requests.archive'); // <--- ADD THIS LINE
         Route::post('/requests', [RequestController::class, 'store'])->name('requests.store');
     });
 

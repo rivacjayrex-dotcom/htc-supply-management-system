@@ -429,22 +429,26 @@
                 <a href="{{ route('dashboard') }}" class="nav-link-custom {{ request()->routeIs('dashboard') ? 'active' : '' }}">
                     <i data-lucide="layout-dashboard"></i> Home
                 </a>
+
+                <!-- 1. ACTIVE IN-PROGRESS REQUESTS (All Users) -->
                 <a href="{{ route('requests.index') }}" class="nav-link-custom {{ request()->routeIs('requests.index') ? 'active' : '' }}">
-                    <i data-lucide="clipboard-list"></i> Requests
+                    <i data-lucide="clipboard-list"></i> Active Requests
                 </a>
 
-                 @if(Auth::user()->role == 'smo')
-                    <a href="{{ route('admin.archive') }}" class="nav-link-custom {{ request()->routeIs('admin.archive') ? 'active' : '' }}">
-                        <i data-lucide="archive"></i> Complete Archive
-                    </a>
-                @endif
+                <!-- 2. REQUISITION ARCHIVE / HISTORY (All Users) -->
+                <a href="{{ route('requests.archive') }}" class="nav-link-custom {{ request()->routeIs('requests.archive') ? 'active' : '' }}">
+                    <i data-lucide="archive"></i> Requisition Archive
+                </a>
 
                 <a href="{{ route('notifications') }}" class="nav-link-custom {{ request()->routeIs('notifications') ? 'active' : '' }}">
                     <div class="d-flex justify-content-between align-items-center w-100">
                         <div><i data-lucide="bell"></i> Notifications</div>
-                        @if($unreadCount > 0) <span class="badge rounded-pill bg-danger" style="font-size: 10px;">{{ $unreadCount }}</span> @endif
+                        @if(isset($unreadCount) && $unreadCount > 0)
+                            <span class="badge rounded-pill bg-danger" style="font-size: 10px;">{{ $unreadCount }}</span>
+                        @endif
                     </div>
                 </a>
+
                 @if(Auth::user()->role == 'smo')
                     <div class="nav-section-label">Institutional Reports</div>
 
