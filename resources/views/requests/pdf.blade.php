@@ -119,7 +119,7 @@
             <!-- FIXED ROW FILLING LOGIC -->
             @php
                 $maxRows = ($request->request_type == 'major' ? 9 : 14);
-                $remaining = $maxRows - $request->items->count();
+                $remaining = max(0, $maxRows - $request->items->count());
             @endphp
 
             @for($i = 0; $i < $remaining; $i++)

@@ -50,10 +50,15 @@
                     </div>
                 </div>
 
-                <!-- 3. TRACKING TIMELINE -->
+<!-- 3. TRACKING TIMELINE -->
                 <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
-                    <h6 class="info-label mb-4">Real-time Approval Flow</h6>
-                    <div class="px-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h6 class="info-label mb-0">Real-time Approval Flow</h6>
+                        @if($request->status == 'rejected')
+                            <span class="badge bg-danger px-3 py-1 rounded-pill">REJECTED / DISAPPROVED</span>
+                        @endif
+                    </div>
+                    <div class="px-2">
                         <div class="tracking-stepper">
                             <!-- Step 1: Submission -->
                             <div class="step-item completed">
@@ -65,26 +70,34 @@
                             @php
                                 $isDeptDone = in_array($request->status, ['approved_dept', 'approved_vp', 'approved_provost', 'approved_president', 'released']);
                                 $isDeptActive = ($request->status == 'pending');
-                                $isDeptFlowing = ($request->status == 'approved_dept');
                             @endphp
-                            <div class="step-item {{ $isDeptDone ? 'completed' : ($isDeptActive ? 'active' : '') }} {{ $isDeptFlowing ? 'in-progress' : '' }}">
+                            <div class="step-item {{ $isDeptDone ? 'completed' : ($isDeptActive ? 'active' : '') }}">
                                 <div class="step-icon"><i data-lucide="user-check"></i></div>
                                 <div class="step-label">Dept. Head</div>
                             </div>
 
-                            <!-- Step 3: VP Finance/Admin -->
+                            <!-- Step 3: VP Finance (Minor) or VP Admin (Major) -->
                             @php
                                 $isVPDone = in_array($request->status, ['approved_vp', 'approved_provost', 'approved_president', 'released']);
                                 $isVPActive = ($request->status == 'approved_dept');
-                                $isVPFlowing = ($request->status == 'approved_vp');
                             @endphp
-                            <div class="step-item {{ $isVPDone ? 'completed' : ($isVPActive ? 'active' : '') }} {{ $isVPFlowing ? 'in-progress' : '' }}">
+                            <div class="step-item {{ $isVPDone ? 'completed' : ($isVPActive ? 'active' : '') }}">
                                 <div class="step-icon"><i data-lucide="shield-check"></i></div>
                                 <div class="step-label">{{ $request->request_type == 'minor' ? 'VP Finance' : 'VP Admin' }}</div>
                             </div>
 
                             @if($request->request_type == 'major')
-                                <!-- Step 4: President -->
+                                <!-- Step 4: Provost -->
+                                @php
+                                    $isProvostDone = in_array($request->status, ['approved_provost', 'approved_president', 'released']);
+                                    $isProvostActive = ($request->status == 'approved_vp');
+                                @endphp
+                                <div class="step-item {{ $isProvostDone ? 'completed' : ($isProvostActive ? 'active' : '') }}">
+                                    <div class="step-icon"><i data-lucide="file-check"></i></div>
+                                    <div class="step-label">Provost</div>
+                                </div>
+
+                                <!-- Step 5: President -->
                                 @php
                                     $isPresDone = in_array($request->status, ['approved_president', 'released']);
                                     $isPresActive = ($request->status == 'approved_provost');
@@ -95,10 +108,10 @@
                                 </div>
                             @endif
 
-                            <!-- Step 5: Released -->
+                            <!-- Final Step: SMO Fulfillment / Released -->
                             <div class="step-item {{ $request->status == 'released' ? 'completed' : '' }}">
                                 <div class="step-icon"><i data-lucide="package-check"></i></div>
-                                <div class="step-label">Released</div>
+                                <div class="step-label">Released (SMO)</div>
                             </div>
                         </div>
                     </div>

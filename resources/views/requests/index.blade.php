@@ -84,5 +84,17 @@
         <div class="mb-5">
             @include('requests.partials.history-table', ['requisitions' => $activeRequests, 'type' => 'active'])
         </div>
+
+        <!-- SECTION 2: COMPLETED & ARCHIVED REQUISITIONS -->
+        <div class="d-flex align-items-center mb-2">
+            <div class="p-2 rounded-3 bg-secondary-subtle text-secondary me-2">
+                <i data-lucide="archive" style="width:16px;"></i>
+            </div>
+            <h6 class="fw-bold mb-0 text-dark">Completed & Archived Requisitions ({{ $completedRequests->count() }})</h6>
+        </div>
+
+        <div class="mb-5">
+            @include('requests.partials.history-table', ['requisitions' => $completedRequests, 'type' => 'completed'])
+        </div>
     </div>
 </x-app-layout>

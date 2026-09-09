@@ -1,6 +1,6 @@
 <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;"> <!-- Compact font -->
+        <table class="table table-hover align-middle mb-0" style="font-size: 0.85rem;">
             <thead class="bg-light text-muted small text-uppercase">
                 <tr>
                     <th class="ps-4 py-3" style="width: 80px;">Req #</th>
@@ -14,7 +14,7 @@
                     <th class="py-3 text-center">Tier</th>
                     <th class="py-3 text-end">Grand Total</th>
                     <th class="py-3 text-center">Status</th>
-                    <th class="pe-4 py-3 text-end">Action</th>
+                    <th class="pe-4 py-3 text-end" style="min-width: 140px;">Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -36,44 +36,65 @@
                         @endif
                     </td>
 
+                    <!-- 1. TIER COLUMN (Minor vs Major) -->
                     <td class="text-center">
-                    @php
-                        // Standardized Color Logic
-                        $statusClass = 'status-approved';
-                        if($req->status == 'pending') $statusClass = 'status-pending';
-                        if($req->status == 'released') $statusClass = 'status-released';
-                        if($req->status == 'rejected') $statusClass = 'status-rejected';
-
-                        // Identify if it's nearing deadline even in history
-                        $isNearDeadline = $req->updated_at <= now()->subDays(2) && !in_array($req->status, ['released', 'rejected']);
-                        if($isNearDeadline) $statusClass = 'status-deadline';
-                    @endphp
-
-                    <span class="badge {{ $statusClass }} text-uppercase px-3 py-2 rounded-pill" style="font-size: 8px;">
-                        {{ str_replace('_', ' ', $req->status) }}
-                    </span>
-                </td>
-
-                    <td class="text-end fw-bold text-dark">₱{{ number_format($req->grand_total, 2) }}</td>
-
-                    <td class="text-center">
-                        @php
-                            $statusColor = match($req->status) {
-                                'released' => 'bg-success',
-                                'rejected' => 'bg-danger',
-                                'pending' => 'bg-secondary',
-                                default => 'bg-success-subtle text-success border border-success'
-                            };
-                        @endphp
-                        <span class="badge {{ $statusColor }} text-uppercase px-2 py-1" style="font-size: 9px;">
-                            {{ str_replace('_', ' ', $req->status) }}
+                        <span class="badge {{ $req->request_type == 'major' ? 'bg-primary' : 'bg-secondary' }} text-uppercase px-2 py-1 rounded-pill" style="font-size: 9px;">
+                            {{ $req->request_type }}
                         </span>
                     </td>
 
+                    <!-- 2. GRAND TOTAL COLUMN -->
+                    <td class="text-end fw-bold text-dark">₱{{ number_format($req->grand_total, 2) }}</td>
+
+                    <!-- 3. STATUS COLUMN (With 3-day SLA Warning) -->
+                    <td class="text-center">
+                        @php
+                            $statusColor = match($req->status) {
+                                'released'           => 'bg-success text-white',
+                                'rejected'           => 'bg-danger text-white',
+                                'pending'            => 'bg-secondary text-white',
+                                'approved_president' => 'bg-success text-white',
+                                default              => 'bg-warning-subtle text-dark border border-warning'
+                            };
+
+                            // Overdue or nearing deadline indicator for unreleased items
+                            $isOverdue = method_exists($req, 'isOverdue') && $req->isOverdue();
+                            $isNear = method_exists($req, 'isNearingDeadline') && $req->isNearingDeadline();
+                        @endphp
+
+                        <span class="badge {{ $statusColor }} text-uppercase px-2 py-1 rounded-pill" style="font-size: 9px;">
+                            {{ str_replace('_', ' ', $req->status) }}
+                        </span>
+
+                        @if($isOverdue && !in_array($req->status, ['released', 'rejected']))
+                            <div class="text-danger fw-bold mt-1" style="font-size: 9px;">⚠️ Overdue (>3d)</div>
+                        @elseif($isNear && !in_array($req->status, ['released', 'rejected']))
+                            <div class="text-warning fw-bold mt-1" style="font-size: 9px;">⏳ Day 2 Alert</div>
+                        @endif
+                    </td>
+
+                    <!-- 4. ACTIONS COLUMN (Details, Edit, Delete) -->
                     <td class="pe-4 text-end">
-                        <a href="{{ route('requests.show', $req->id) }}" class="btn btn-sm btn-light border rounded-pill px-3 shadow-none fw-bold" style="font-size: 10px;">
-                            Details →
-                        </a>
+                        <div class="d-inline-flex gap-1 align-items-center">
+                            <a href="{{ route('requests.show', $req->id) }}" class="btn btn-sm btn-light border rounded-pill px-3 shadow-none fw-bold" style="font-size: 10px;">
+                                Details →
+                            </a>
+
+                            <!-- If user owns it and it's still pending, allow Edit & Delete -->
+                            @if(Auth::id() == $req->user_id && $req->status == 'pending')
+                                <a href="{{ route('requisitions.edit', $req->id) }}" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1" title="Edit Request" style="font-size: 10px;">
+                                    Edit
+                                </a>
+
+                                <form action="{{ route('requisitions.destroy', $req->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to cancel and delete this requisition?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-2 py-1" title="Cancel Request" style="font-size: 10px;">
+                                        ✕
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </td>
                 </tr>
                 @empty
