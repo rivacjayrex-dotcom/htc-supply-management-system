@@ -85,11 +85,22 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold text-dark text-uppercase">Institutional Category <span class="text-danger">*</span></label>
-                                    <select name="category" class="form-select border-0 bg-light py-2 rounded-3 shadow-none" required>
-                                        @foreach(['Office Supplies', 'IT Equipment', 'Janitorial', 'Furniture', 'Laboratory'] as $cat)
+                                    <select name="category" class="form-select border-0 bg-light py-2 rounded-3 shadow-none @error('category') is-invalid @enderror" required>
+                                        <option value="">-- Select Category --</option>
+                                        @foreach([
+                                            'Cleaning Supplies',
+                                            'Construction Supplies',
+                                            'Drugs and Medicines',
+                                            'HDMI',
+                                            'Maintenance Supplies',
+                                            'Medical Supplies',
+                                            'Non-Medical Supplies',
+                                            'Office Supplies'
+                                        ] as $cat)
                                             <option value="{{ $cat }}" {{ old('category', $item->category) == $cat ? 'selected' : '' }}>{{ $cat }}</option>
                                         @endforeach
                                     </select>
+                                    @error('category') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-bold text-dark text-uppercase">Model / Series #</label>

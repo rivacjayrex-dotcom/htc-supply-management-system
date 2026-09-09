@@ -28,10 +28,10 @@ class SupplyController extends Controller
         $validated = $request->validate([
             'item_name'       => 'required|string|max:255|unique:supplies,item_name',
             'brand'           => 'required|string|max:100',
-            'category'        => 'required|in:Office Supplies,IT Equipment,Janitorial,Furniture,Laboratory',
-            'specifications'  => 'required|string|min:5', // Relaxed to min:5 so shorter specs don't fail
+            'category'        => 'required|in:Cleaning Supplies,Construction Supplies,Drugs and Medicines,HDMI,Maintenance Supplies,Medical Supplies,Non-Medical Supplies,Office Supplies',
+            'specifications'  => 'required|string|min:3',
             'quantity'        => 'required|integer|min:0',
-            'unit'            => 'required|in:Bottle,Box(es),Can(s),Gallon(s),Kilogram(s),Liter(s),Meter(s),Pack(s),PC/PCS,Piece(s),Ream(s),Roll(s),Set,Unit(s)',
+            'unit'            => 'required|string|max:50',
             'unit_price'      => 'required|numeric|min:0.01',
             'min_stock_level' => 'required|integer|min:0',
             'model_number'    => 'nullable|string|max:100',
@@ -69,10 +69,10 @@ class SupplyController extends Controller
         $validated = $request->validate([
             'item_name'       => 'required|string|max:255|unique:supplies,item_name,' . $id,
             'brand'           => 'required|string|max:100',
-            'category'        => 'required|in:Office Supplies,IT Equipment,Janitorial,Furniture,Laboratory',
+            'category'        => 'required|in:Cleaning Supplies,Construction Supplies,Drugs and Medicines,HDMI,Maintenance Supplies,Medical Supplies,Non-Medical Supplies,Office Supplies',
             'specifications'  => 'required|string|min:3',
             'quantity'        => 'required|integer|min:0',
-            'unit'            => 'required|string|max:50', // Flexible string to avoid dropdown conflicts
+            'unit'            => 'required|string|max:50',
             'unit_price'      => 'required|numeric|min:0.01',
             'min_stock_level' => 'required|integer|min:0',
             'model_number'    => 'nullable|string|max:100',

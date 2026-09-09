@@ -48,11 +48,18 @@
                                     <label class="form-label mini-label">Institutional Category <span class="text-danger">*</span></label>
                                     <select name="category" class="form-select border-0 bg-light py-2 shadow-none @error('category') is-invalid @enderror" required>
                                         <option value="">-- Select Category --</option>
-                                        <option value="Office Supplies" {{ old('category') == 'Office Supplies' ? 'selected' : '' }}>Office Supplies</option>
-                                        <option value="IT Equipment" {{ old('category') == 'IT Equipment' ? 'selected' : '' }}>IT Equipment</option>
-                                        <option value="Janitorial" {{ old('category') == 'Janitorial' ? 'selected' : '' }}>Janitorial</option>
-                                        <option value="Laboratory" {{ old('category') == 'Laboratory' ? 'selected' : '' }}>Laboratory</option>
-                                        <option value="Furniture" {{ old('category') == 'Furniture' ? 'selected' : '' }}>Furniture</option>
+                                        @foreach([
+                                            'Cleaning Supplies',
+                                            'Construction Supplies',
+                                            'Drugs and Medicines',
+                                            'HDMI',
+                                            'Maintenance Supplies',
+                                            'Medical Supplies',
+                                            'Non-Medical Supplies',
+                                            'Office Supplies'
+                                        ] as $cat)
+                                            <option value="{{ $cat }}" {{ old('category') == $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                                        @endforeach
                                     </select>
                                     @error('category') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
