@@ -224,6 +224,20 @@
             line-height: 1.2;
         }
 
+        /* Questioning / Clarification State (Orennss) */
+        .step-item.questioning .step-icon {
+            border-color: #fd7e14 !important;
+            color: #fd7e14 !important;
+            background-color: #fff8f3 !important;
+            box-shadow: 0 0 0 4px rgba(253, 126, 20, 0.25) !important;
+            animation: pulseWarning 2s infinite !important;
+        }
+
+        .step-item.questioning .step-label {
+            color: #fd7e14 !important;
+            font-weight: 800 !important;
+        }
+
         .step-item.active .step-label { color: #856404; }
 
         /* --- ANIMATION DEFINITIONS --- */
@@ -236,6 +250,12 @@
             0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.4); }
             70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
             100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+        }
+
+        @keyframes pulseWarning {
+            0% { box-shadow: 0 0 0 0 rgba(253, 126, 20, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(253, 126, 20, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(253, 126, 20, 0); }
         }
 
         /* --- APPLYING TO THE STEPPER --- */

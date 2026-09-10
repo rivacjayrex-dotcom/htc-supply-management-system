@@ -56,8 +56,17 @@
                         <h6 class="info-label mb-0">Real-time Approval Flow</h6>
                         @if($request->status == 'rejected')
                             <span class="badge bg-danger px-3 py-1 rounded-pill">REJECTED / DISAPPROVED</span>
+                        @elseif($request->status == 'for_clarification')
+                            <span class="badge bg-warning text-dark px-3 py-1 rounded-pill fw-bold">⚠️ ACTIVE OFFICE INQUIRY</span>
                         @endif
                     </div>
+
+                    @php
+                        // Determine which signatory last placed the requisition for clarification
+                        $lastLog = $request->logs->sortByDesc('created_at')->first();
+                        $questioningRole = ($request->status === 'for_clarification' && $lastLog) ? $lastLog->role : null;
+                    @endphp
+
                     <div class="px-2">
                         <div class="tracking-stepper">
                             <!-- Step 1: Submission -->
@@ -69,42 +78,63 @@
                             <!-- Step 2: Dept Head -->
                             @php
                                 $isDeptDone = in_array($request->status, ['approved_dept', 'approved_vp', 'approved_provost', 'approved_president', 'released']);
-                                $isDeptActive = ($request->status == 'pending');
+                                $isDeptQuestioning = ($request->status === 'for_clarification' && ($questioningRole === 'dept_head' || is_null($questioningRole)));
+                                $isDeptActive = ($request->status === 'pending');
                             @endphp
-                            <div class="step-item {{ $isDeptDone ? 'completed' : ($isDeptActive ? 'active' : '') }}">
-                                <div class="step-icon"><i data-lucide="user-check"></i></div>
-                                <div class="step-label">Dept. Head</div>
+                            <div class="step-item {{ $isDeptDone ? 'completed' : ($isDeptQuestioning ? 'questioning' : ($isDeptActive ? 'active' : '')) }}">
+                                <div class="step-icon">
+                                    <i data-lucide="{{ $isDeptQuestioning ? 'help-circle' : 'user-check' }}"></i>
+                                </div>
+                                <div class="step-label">
+                                    {{ $isDeptQuestioning ? 'Dept Head (Questioning)' : 'Dept Head' }}
+                                </div>
                             </div>
 
                             <!-- Step 3: VP Finance (Minor) or VP Admin (Major) -->
                             @php
                                 $isVPDone = in_array($request->status, ['approved_vp', 'approved_provost', 'approved_president', 'released']);
-                                $isVPActive = ($request->status == 'approved_dept');
+                                $isVPQuestioning = ($request->status === 'for_clarification' && in_array($questioningRole, ['vp_finance', 'vp_admin']));
+                                $isVPActive = ($request->status === 'approved_dept');
+                                $vpTitle = $request->request_type === 'minor' ? 'VP Finance' : 'VP Admin';
                             @endphp
-                            <div class="step-item {{ $isVPDone ? 'completed' : ($isVPActive ? 'active' : '') }}">
-                                <div class="step-icon"><i data-lucide="shield-check"></i></div>
-                                <div class="step-label">{{ $request->request_type == 'minor' ? 'VP Finance' : 'VP Admin' }}</div>
+                            <div class="step-item {{ $isVPDone ? 'completed' : ($isVPQuestioning ? 'questioning' : ($isVPActive ? 'active' : '')) }}">
+                                <div class="step-icon">
+                                    <i data-lucide="{{ $isVPQuestioning ? 'help-circle' : 'shield-check' }}"></i>
+                                </div>
+                                <div class="step-label">
+                                    {{ $isVPQuestioning ? $vpTitle . ' (Questioning)' : $vpTitle }}
+                                </div>
                             </div>
 
                             @if($request->request_type == 'major')
                                 <!-- Step 4: Provost -->
                                 @php
                                     $isProvostDone = in_array($request->status, ['approved_provost', 'approved_president', 'released']);
-                                    $isProvostActive = ($request->status == 'approved_vp');
+                                    $isProvostQuestioning = ($request->status === 'for_clarification' && $questioningRole === 'provost');
+                                    $isProvostActive = ($request->status === 'approved_vp');
                                 @endphp
-                                <div class="step-item {{ $isProvostDone ? 'completed' : ($isProvostActive ? 'active' : '') }}">
-                                    <div class="step-icon"><i data-lucide="file-check"></i></div>
-                                    <div class="step-label">Provost</div>
+                                <div class="step-item {{ $isProvostDone ? 'completed' : ($isProvostQuestioning ? 'questioning' : ($isProvostActive ? 'active' : '')) }}">
+                                    <div class="step-icon">
+                                        <i data-lucide="{{ $isProvostQuestioning ? 'help-circle' : 'graduation-cap' }}"></i>
+                                    </div>
+                                    <div class="step-label">
+                                        {{ $isProvostQuestioning ? 'Provost (Questioning)' : 'Provost' }}
+                                    </div>
                                 </div>
 
                                 <!-- Step 5: President -->
                                 @php
                                     $isPresDone = in_array($request->status, ['approved_president', 'released']);
-                                    $isPresActive = ($request->status == 'approved_provost');
+                                    $isPresQuestioning = ($request->status === 'for_clarification' && $questioningRole === 'president');
+                                    $isPresActive = ($request->status === 'approved_provost');
                                 @endphp
-                                <div class="step-item {{ $isPresDone ? 'completed' : ($isPresActive ? 'active' : '') }}">
-                                    <div class="step-icon"><i data-lucide="award"></i></div>
-                                    <div class="step-label">President</div>
+                                <div class="step-item {{ $isPresDone ? 'completed' : ($isPresQuestioning ? 'questioning' : ($isPresActive ? 'active' : '')) }}">
+                                    <div class="step-icon">
+                                        <i data-lucide="{{ $isPresQuestioning ? 'help-circle' : 'award' }}"></i>
+                                    </div>
+                                    <div class="step-label">
+                                        {{ $isPresQuestioning ? 'President (Questioning)' : 'President' }}
+                                    </div>
                                 </div>
                             @endif
 

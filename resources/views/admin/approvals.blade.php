@@ -119,7 +119,7 @@
                             </div>
                         </div>
 
-                        <!-- DYNAMIC TIMELINE (Alpine Only) -->
+                        <!-- DYNAMIC TIMELINE (Alpine Real-Time for all Signatories) -->
                         <div class="mb-4 px-2">
                             <div class="tracking-stepper">
                                 <!-- Step 1 -->
@@ -132,32 +132,55 @@
                                 <div class="step-item"
                                     :class="{
                                         'completed': ['approved_dept', 'approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status),
-                                        'active': selectedReq.status == 'pending',
-                                        'in-progress': selectedReq.status == 'approved_dept'
+                                        'questioning': selectedReq.status === 'for_clarification' && (!questioningRole || questioningRole === 'dept_head'),
+                                        'active': selectedReq.status === 'pending'
                                     }">
-                                    <div class="step-icon"><i data-lucide="user-check"></i></div>
-                                    <div class="step-label">Dept Head</div>
+                                    <div class="step-icon">
+                                        <i :data-lucide="selectedReq.status === 'for_clarification' && (!questioningRole || questioningRole === 'dept_head') ? 'help-circle' : 'user-check'"></i>
+                                    </div>
+                                    <div class="step-label" x-text="selectedReq.status === 'for_clarification' && (!questioningRole || questioningRole === 'dept_head') ? 'Dept Head (Questioning)' : 'Dept Head'"></div>
                                 </div>
 
-                                <!-- Step 3: VP -->
-                                <div class="step-item" :class="['approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'approved_dept' ? 'active' : '')">
-                                    <div class="step-icon"><i data-lucide="shield-check"></i></div>
-                                    <div class="step-label" x-text="selectedReq.request_type == 'minor' ? 'VP Finance' : 'VP Admin'"></div>
+                                <!-- Step 3: VP Finance / Admin -->
+                                <div class="step-item"
+                                    :class="{
+                                        'completed': ['approved_vp', 'approved_provost', 'approved_president', 'released'].includes(selectedReq.status),
+                                        'questioning': selectedReq.status === 'for_clarification' && ['vp_finance', 'vp_admin'].includes(questioningRole),
+                                        'active': selectedReq.status === 'approved_dept'
+                                    }">
+                                    <div class="step-icon">
+                                        <i :data-lucide="selectedReq.status === 'for_clarification' && ['vp_finance', 'vp_admin'].includes(questioningRole) ? 'help-circle' : 'shield-check'"></i>
+                                    </div>
+                                    <div class="step-label" x-text="(selectedReq.request_type == 'minor' ? 'VP Finance' : 'VP Admin') + (selectedReq.status === 'for_clarification' && ['vp_finance', 'vp_admin'].includes(questioningRole) ? ' (Questioning)' : '')"></div>
                                 </div>
 
                                 <!-- Step 4: Provost (Major Only) -->
                                 <template x-if="selectedReq.request_type == 'major'">
-                                    <div class="step-item" :class="['approved_provost', 'approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'approved_vp' ? 'active' : '')">
-                                        <div class="step-icon"><i data-lucide="graduation-cap"></i></div>
-                                        <div class="step-label">Provost</div>
+                                    <div class="step-item"
+                                        :class="{
+                                            'completed': ['approved_provost', 'approved_president', 'released'].includes(selectedReq.status),
+                                            'questioning': selectedReq.status === 'for_clarification' && questioningRole === 'provost',
+                                            'active': selectedReq.status === 'approved_vp'
+                                        }">
+                                        <div class="step-icon">
+                                            <i :data-lucide="selectedReq.status === 'for_clarification' && questioningRole === 'provost' ? 'help-circle' : 'graduation-cap'"></i>
+                                        </div>
+                                        <div class="step-label" x-text="'Provost' + (selectedReq.status === 'for_clarification' && questioningRole === 'provost' ? ' (Questioning)' : '')"></div>
                                     </div>
                                 </template>
 
                                 <!-- Step 5: President (Major Only) -->
                                 <template x-if="selectedReq.request_type == 'major'">
-                                    <div class="step-item" :class="['approved_president', 'released'].includes(selectedReq.status) ? 'completed' : (selectedReq.status == 'approved_provost' ? 'active' : '')">
-                                        <div class="step-icon"><i data-lucide="award"></i></div>
-                                        <div class="step-label">President</div>
+                                    <div class="step-item"
+                                        :class="{
+                                            'completed': ['approved_president', 'released'].includes(selectedReq.status),
+                                            'questioning': selectedReq.status === 'for_clarification' && questioningRole === 'president',
+                                            'active': selectedReq.status === 'approved_provost'
+                                        }">
+                                        <div class="step-icon">
+                                            <i :data-lucide="selectedReq.status === 'for_clarification' && questioningRole === 'president' ? 'help-circle' : 'award'"></i>
+                                        </div>
+                                        <div class="step-label" x-text="'President' + (selectedReq.status === 'for_clarification' && questioningRole === 'president' ? ' (Questioning)' : '')"></div>
                                     </div>
                                 </template>
 
@@ -213,34 +236,36 @@
                                 </form>
                             @else
                                 <!-- SIGNATORY 3-BUTTON DECISION FORM -->
+                                <!-- SIGNATORY DECISION FORM -->
                                 <form :action="'{{ url('/admin/requests') }}/' + selectedReq.id + '/status'" method="POST">
                                     @csrf
                                     <div class="mb-3">
                                         <label class="form-label small fw-bold text-muted text-uppercase tracking-widest" style="font-size: 9px;">
-                                            Signatory Remarks / Clarification Inquiry
+                                            Signatory Remarks / Decision Notes
                                         </label>
                                         <textarea name="remarks" class="form-control border-0 bg-light rounded-3 shadow-none" rows="2" placeholder="State reason if rejecting or requesting office inquiry..."></textarea>
                                     </div>
 
                                     <div class="row g-2">
                                         <!-- 1. REJECT BUTTON -->
-                                        <div class="col-md-4">
+                                        <div :class="selectedReq.status === 'for_clarification' ? 'col-6' : 'col-md-4'">
                                             <button name="status" value="rejected" type="submit" class="btn btn-outline-danger fw-bold w-100 py-2 rounded-3">
                                                 <i data-lucide="x-circle" class="me-1" style="width:14px; vertical-align: middle;"></i> Reject
                                             </button>
                                         </div>
 
-                                        <!-- 2. THE NEW 3RD BUTTON: CALL FOR CLARIFICATION -->
-                                        <div class="col-md-4">
+                                        <!-- 2. OFFICE INQUIRY (Hides automatically if ALREADY under clarification) -->
+                                        <div class="col-md-4" x-show="selectedReq.status !== 'for_clarification'">
                                             <button name="status" value="clarification" type="submit" class="btn btn-warning fw-bold text-dark w-100 py-2 rounded-3 shadow-sm">
                                                 <i data-lucide="help-circle" class="me-1" style="width:14px; vertical-align: middle;"></i> Office Inquiry
                                             </button>
                                         </div>
 
                                         <!-- 3. APPROVE BUTTON -->
-                                        <div class="col-md-4">
+                                        <div :class="selectedReq.status === 'for_clarification' ? 'col-6' : 'col-md-4'">
                                             <button name="status" value="approved" type="submit" class="btn btn-success fw-bold w-100 py-2 shadow-sm rounded-3">
-                                                <i data-lucide="check-circle" class="me-1" style="width:14px; vertical-align: middle;"></i> Approve
+                                                <i data-lucide="check-circle" class="me-1" style="width:14px; vertical-align: middle;"></i>
+                                                <span x-text="selectedReq.status === 'for_clarification' ? 'Approve (Satisfied)' : 'Approve'"></span>
                                             </button>
                                         </div>
                                     </div>
@@ -260,17 +285,27 @@
                 selectedItems: [],
                 requestorName: '',
                 requestorDept: '',
+                questioningRole: null,
+
                 openDetails(req, items, name, dept) {
                     this.selectedReq = req;
                     this.selectedItems = items;
                     this.requestorName = name;
                     this.requestorDept = dept;
 
+                    // Identify the signatory that initiated the clarification from logs
+                    if (req.status === 'for_clarification' && req.logs && req.logs.length > 0) {
+                        const lastLog = [...req.logs].reverse().find(l => l.action.includes('Clarification'));
+                        this.questioningRole = lastLog ? lastLog.role : null;
+                    } else {
+                        this.questioningRole = null;
+                    }
+
                     const modalEl = document.getElementById('reviewModal');
                     const modal = new bootstrap.Modal(modalEl);
                     modal.show();
 
-                    // Trigger icon re-renders cleanly
+                    // Re-render icons cleanly
                     setTimeout(() => lucide.createIcons(), 100);
                     setTimeout(() => lucide.createIcons(), 350);
                 }
