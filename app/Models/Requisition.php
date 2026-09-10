@@ -63,4 +63,24 @@ class Requisition extends Model
 
         return false;
     }
+
+    /**
+     * Institutional Control Tracking Number
+     * e.g. MIN-CETE-20000001 or MAJ-CBMA-10000001
+     */
+    public function getTrackingCode(): string
+    {
+        $prefix = strtoupper($this->request_type) === 'MAJOR' ? 'MAJ' : 'MIN';
+        $tierCode = strtoupper($this->request_type) === 'MAJOR' ? '10' : '20';
+        $dept = strtoupper($this->user->department ?? 'HTC');
+        $uniqueNumber = $tierCode . str_pad($this->id, 6, '0', STR_PAD_LEFT);
+
+        return "{$prefix}-{$dept}-{$uniqueNumber}";
+    }
+
+    // Optional: Attribute accessor so you can also call $req->tracking_code
+    public function getTrackingCodeAttribute(): string
+    {
+        return $this->getTrackingCode();
+    }
 }

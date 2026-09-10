@@ -50,7 +50,7 @@
             <td width="25%">
                 <div class="control-box" style="float: right;">
                     <div style="font-size: 8px;">Control No.</div>
-                    <div style="font-size: 16px; font-weight: bold; letter-spacing: 2px;">{{ str_pad($request->id, 6, '0', STR_PAD_LEFT) }}</div>
+                    <div style="font-size: 11px; font-weight: bold; letter-spacing: 1px;">{{ $request->tracking_code }}</div>
                     <div style="border-top: 1px solid #000; margin-top: 3px; font-size: 8px;">Date: {{ $request->created_at->format('m/d/Y') }}</div>
                 </div>
             </td>

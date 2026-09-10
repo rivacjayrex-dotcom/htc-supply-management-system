@@ -212,7 +212,7 @@
                         <tbody>
                             @forelse($records as $r)
                             <tr>
-                                <td class="ps-4 fw-mono text-muted">#{{ str_pad($r->id, 4, '0', STR_PAD_LEFT) }}</td>
+                                <td class="ps-4 fw-mono text-muted font-monospace small">{{ $r->tracking_code }}</td>
                                 <td class="fw-bold text-dark">{{ $r->user->name }}</td>
                                 <td><span class="badge bg-light text-dark border">{{ $r->user->department }}</span></td>
                                 <td><span class="badge {{ $r->request_type === 'major' ? 'bg-primary' : 'bg-secondary' }}">{{ strtoupper($r->request_type) }}</span></td>

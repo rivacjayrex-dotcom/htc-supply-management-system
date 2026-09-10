@@ -20,7 +20,7 @@
             <tbody>
                 @forelse($requisitions as $req)
                 <tr>
-                    <td class="ps-4 text-muted fw-mono">#{{ str_pad($req->id, 4, '0', STR_PAD_LEFT) }}</td>
+                    <td class="ps-4 text-muted fw-mono small fw-bold">{{ $req->tracking_code }}</td>
 
                     @if(Auth::user()->role == 'smo')
                     <td>

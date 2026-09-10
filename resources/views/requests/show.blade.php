@@ -38,7 +38,7 @@
                         </div>
                         <div class="text-end">
                             <div class="info-label">Requisition ID</div>
-                            <div class="fw-black text-dark">#{{ str_pad($request->id, 5, '0', STR_PAD_LEFT) }}</div>
+                            <div class="fw-black text-dark font-monospace">{{ $request->tracking_code }}</div>
                             <span class="badge bg-dark px-3 rounded-pill mt-2" style="font-size: 9px;">{{ strtoupper($request->request_type) }} TIER</span>
                         </div>
                     </div>

@@ -100,7 +100,9 @@
                 <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
                     <div class="modal-header border-0 bg-light p-4">
                         <div>
-                            <h5 class="modal-title fw-bold text-dark mb-0">Review Requisition <span class="text-success" x-text="'#' + selectedReq.id"></span></h5>
+                            <h5 class="modal-title fw-bold">Review Requisition
+                                <span class="text-success font-monospace" x-text="(selectedReq.request_type === 'major' ? 'MAJ' : 'MIN') + '-' + requestorDept + '-' + (selectedReq.request_type === 'major' ? '10' : '20') + String(selectedReq.id).padStart(6, '0')"></span>
+                            </h5>
                             <span class="badge bg-dark rounded-pill px-3 mt-1" style="font-size: 9px;" x-text="(selectedReq.request_type || '').toUpperCase() + ' TIER'"></span>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
