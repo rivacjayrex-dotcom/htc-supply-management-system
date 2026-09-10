@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use App\Models\Requisition;
 use App\Models\RequisitionItem;
+use App\Models\User;
 use App\Models\Supply;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -90,94 +91,74 @@ class RequestController extends Controller
      * Admin/Signatory Approval Queue
      */
     public function adminIndex()
-    {
-        $user = Auth::user();
+        {
+            $user = Auth::user();
 
-        $query = Requisition::with(['items', 'user']);
+            // Standard pending query
+            $query = Requisition::with(['items', 'user']);
 
-        switch ($user->role) {
-            case 'dept_head':
-                // Department Head sees only pending requests from their own department
-                $query->where('status', 'pending')
-                      ->whereHas('user', function ($u) use ($user) {
-                          $u->where('department', $user->department);
-                      });
-                break;
-
-            case 'vp_finance':
-                // VP Finance sees MINOR requests approved by Dept Head
-                $query->where('status', 'approved_dept')
-                      ->where('request_type', 'minor');
-                break;
-
-            case 'vp_admin':
-                // VP Admin sees MAJOR requests approved by Dept Head
-                $query->where('status', 'approved_dept')
-                      ->where('request_type', 'major');
-                break;
-
-            case 'provost':
-                // Provost sees MAJOR requests endorsed by VP Admin
-                $query->where('status', 'approved_vp')
-                      ->where('request_type', 'major');
-                break;
-
-            case 'president':
-                // President sees MAJOR requests recommended by Provost
-                $query->where('status', 'approved_provost')
-                      ->where('request_type', 'major');
-                break;
-
-            case 'smo':
-                // SMO sees fully approved requests ready for fulfillment:
-                // - Minor requests approved by VP Finance ('approved_vp')
-                // - Major requests approved by President ('approved_president')
-                $query->where(function ($q) {
-                    $q->where(function ($sub) {
-                        $sub->where('request_type', 'minor')
-                            ->where('status', 'approved_vp');
-                    })->orWhere(function ($sub) {
-                        $sub->where('status', 'approved_president');
+            switch ($user->role) {
+                case 'dept_head':
+                    $query->where('status', 'pending')
+                        ->whereHas('user', fn($u) => $u->where('department', $user->department));
+                    break;
+                case 'vp_finance':
+                    $query->where('status', 'approved_dept')->where('request_type', 'minor');
+                    break;
+                case 'vp_admin':
+                    $query->where('status', 'approved_dept')->where('request_type', 'major');
+                    break;
+                case 'provost':
+                    $query->where('status', 'approved_vp')->where('request_type', 'major');
+                    break;
+                case 'president':
+                    $query->where('status', 'approved_provost')->where('request_type', 'major');
+                    break;
+                case 'smo':
+                    $query->where(function ($q) {
+                        $q->where(function ($sub) {
+                            $sub->where('request_type', 'minor')->where('status', 'approved_vp');
+                        })->orWhere(function ($sub) {
+                            $sub->where('status', 'approved_president');
+                        });
                     });
-                });
-                break;
+                    break;
+                default:
+                    $query->whereRaw('1 = 0');
+                    break;
+            }
 
-            default:
-                // Other roles or employees have no approval duties
-                $query->whereRaw('1 = 0');
-                break;
+            $pendingRequests = $query->latest()->get();
+
+            // Dedicated list for requests placed on hold / for clarification
+            $clarificationRequests = Requisition::with(['items', 'user'])
+                ->where('status', 'for_clarification')
+                ->latest()
+                ->get();
+
+            if ($user->role === 'smo') {
+                $pendingMinor = $pendingRequests->where('request_type', 'minor');
+                $pendingMajor = $pendingRequests->where('request_type', 'major');
+
+                return view('admin.approvals', compact('pendingMinor', 'pendingMajor', 'clarificationRequests'));
+            }
+
+            return view('admin.approvals', compact('pendingRequests', 'clarificationRequests'));
         }
 
-        $pendingRequests = $query->latest()->get();
-
-        // If user is SMO, separate into tabs for Minor and Major
-        if ($user->role === 'smo') {
-            $pendingMinor = $pendingRequests->where('request_type', 'minor');
-            $pendingMajor = $pendingRequests->where('request_type', 'major');
-
-            return view('admin.approvals', compact('pendingMinor', 'pendingMajor'));
-        }
-
-        return view('admin.approvals', compact('pendingRequests'));
-    }
-
-    /**
-     * Update Approval Status (Signatories)
-     */
 /**
      * Update Approval Status (Signatories)
      */
     public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status'  => 'required|in:approved,rejected',
+            'status'  => 'required|in:approved,rejected,clarification',
             'remarks' => 'nullable|string|max:1000',
         ]);
 
-        $sr = Requisition::with('items')->findOrFail($id);
+        $sr = Requisition::with(['items', 'user'])->findOrFail($id);
         $role = Auth::user()->role;
 
-        // Map system role to a clean, readable title for logging
         $roleTitles = [
             'dept_head'  => 'Department Head',
             'vp_finance' => 'VP for Finance',
@@ -190,44 +171,80 @@ class RequestController extends Controller
 
         $sr->remarks = $request->remarks;
 
-        if ($request->status == 'rejected') {
+        // 1. REJECTED
+        if ($request->status === 'rejected') {
             $sr->status = 'rejected';
-        } else {
-            // State progression based on signatory hierarchy
-            if ($role == 'dept_head') {
+            $actionText = 'Rejected by ' . $position;
+
+            $this->sendAlert(
+                $sr->user_id,
+                "Requisition Disapproved",
+                "Your request #{$sr->id} was rejected by {$position}. Reason: {$request->remarks}",
+                'x-circle',
+                'danger'
+            );
+        }
+        // 2. QUESTIONABLE / OFFICE CLARIFICATION
+        elseif ($request->status === 'clarification') {
+            $sr->status = 'for_clarification';
+            $actionText = 'Flagged for Office Clarification by ' . $position;
+
+            // Notify Requestor
+            $this->sendAlert(
+                $sr->user_id,
+                "⚠️ Office Appearance Requested",
+                "Your request #{$sr->id} requires clarification. Please proceed to the office of {$position} together with SMO. Note: {$request->remarks}",
+                'help-circle',
+                'warning'
+            );
+
+            // Notify SMO In-Charge
+            $smoUsers = User::where('role', 'smo')->get();
+            foreach ($smoUsers as $smo) {
+                $this->sendAlert(
+                    $smo->id,
+                    "⚠️ Inquiry on Req #{$sr->id}",
+                    "{$position} requested a meeting regarding Req #{$sr->id} ({$sr->user->name}). Please coordinate with their office.",
+                    'users',
+                    'warning'
+                );
+            }
+        }
+        // 3. APPROVED (Normal Hierarchy)
+        else {
+            if ($role === 'dept_head') {
                 $sr->status = 'approved_dept';
-            } elseif ($role == 'vp_finance' || $role == 'vp_admin') {
+            } elseif ($role === 'vp_finance' || $role === 'vp_admin') {
                 $sr->status = 'approved_vp';
-            } elseif ($role == 'provost') {
+            } elseif ($role === 'provost') {
                 $sr->status = 'approved_provost';
-            } elseif ($role == 'president') {
+            } elseif ($role === 'president') {
                 $sr->status = 'approved_president';
             }
+            $actionText = 'Approved by ' . $position;
+
+            $itemName = $sr->items()->first()?->item_name ?? 'Items';
+            $statusLabel = str_replace('_', ' ', $sr->status);
+
+            $this->sendAlert(
+                $sr->user_id,
+                "Requisition Progress",
+                "Your request #{$sr->id} has been endorsed by {$position}.",
+                'check-circle',
+                'success'
+            );
         }
 
         $sr->save();
 
-        // Log the approval action
         \App\Models\ApprovalLog::create([
             'requisition_id' => $sr->id,
-            'action'         => ($request->status == 'approved' ? 'Approved' : 'Rejected') . ' by ' . $position,
+            'action'         => $actionText,
             'role'           => $role,
             'remarks'        => $request->remarks,
         ]);
 
-        // Send notification to the requisition owner
-        $itemName = $sr->items()->first()?->item_name ?? 'Items';
-        $statusLabel = str_replace('_', ' ', $sr->status);
-
-        $this->sendAlert(
-            $sr->user_id,
-            "Requisition Update",
-            "Your request for {$itemName} has been updated to: {$statusLabel}.",
-            $request->status == 'approved' ? 'check-circle' : 'x-circle',
-            $request->status == 'approved' ? 'success' : 'danger'
-        );
-
-        return redirect()->route('admin.approvals')->with('success', 'Status updated successfully.');
+        return redirect()->route('admin.approvals')->with('success', "Requisition #{$sr->id} status updated.");
     }
 
 

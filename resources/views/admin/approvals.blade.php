@@ -4,10 +4,11 @@
     </x-slot>
 
     <div class="container-fluid py-2" x-data="approvalManager()">
-        <!-- ALERTS (Keep existing) -->
+        <!-- ALERTS -->
         @if(session('success'))
             <div class="alert alert-success border-0 shadow-sm mb-4 rounded-4 d-flex align-items-center">
-                <i data-lucide="check-circle" class="me-2"></i> {{ session('success') }}
+                <i data-lucide="check-circle" class="me-2" style="width: 20px;"></i>
+                <div>{{ session('success') }}</div>
             </div>
         @endif
 
@@ -18,18 +19,18 @@
             </div>
         @endif
 
-        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-            <div class="card-header bg-white border-0 p-4">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+            <div class="card-header bg-white border-0 p-4 pb-2">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <div>
                         <h5 class="fw-bold mb-0">Requisition Queue</h5>
-                        <p class="text-muted small mb-0">Monitor and process procurement requests.</p>
+                        <p class="text-muted small mb-0">Monitor, evaluate, and process institutional procurement requests.</p>
                     </div>
                 </div>
 
-                <!-- TABS FOR SMO -->
-                @if(Auth::user()->role == 'smo')
-                    <ul class="nav nav-pills gap-2" id="smoTabs" role="tablist">
+                <!-- TABS NAVIGATION -->
+                <ul class="nav nav-pills gap-2" id="approvalsTabs" role="tablist">
+                    @if(Auth::user()->role == 'smo')
                         <li class="nav-item">
                             <button class="nav-link active rounded-pill px-4 fw-bold small text-uppercase" id="minor-tab" data-bs-toggle="pill" data-bs-target="#minor" type="button">
                                 Minor Requests <span class="badge bg-white text-primary ms-2">{{ $pendingMinor->count() }}</span>
@@ -40,8 +41,25 @@
                                 Major Requests <span class="badge bg-white text-warning ms-2">{{ $pendingMajor->count() }}</span>
                             </button>
                         </li>
-                    </ul>
-                @endif
+                    @else
+                        <li class="nav-item">
+                            <button class="nav-link active rounded-pill px-4 fw-bold small text-uppercase" id="pending-tab" data-bs-toggle="pill" data-bs-target="#pending" type="button">
+                                Active Queue <span class="badge bg-white text-dark ms-2">{{ $pendingRequests->count() }}</span>
+                            </button>
+                        </li>
+                    @endif
+
+                    <!-- DEDICATED INQUIRY / OFFICE CLARIFICATION TAB -->
+                    <li class="nav-item">
+                        <button class="nav-link rounded-pill px-4 fw-bold small text-uppercase text-warning" id="clarification-tab" data-bs-toggle="pill" data-bs-target="#clarification" type="button">
+                            <i data-lucide="help-circle" class="me-1" style="width: 14px; vertical-align: middle;"></i>
+                            For Clarification / Inquiry
+                            <span class="badge {{ $clarificationRequests->count() > 0 ? 'bg-warning text-dark' : 'bg-light text-muted' }} ms-2">
+                                {{ $clarificationRequests->count() }}
+                            </span>
+                        </button>
+                    </li>
+                </ul>
             </div>
 
             <div class="card-body p-0">
@@ -56,11 +74,22 @@
                             @include('admin.partials.approvals-table', ['requests' => $pendingMajor])
                         </div>
                     @else
-                        <!-- STANDARD VIEW FOR BOSSES -->
-                        <div class="tab-pane fade show active">
+                        <!-- STANDARD VIEW FOR SIGNATORIES -->
+                        <div class="tab-pane fade show active" id="pending">
                             @include('admin.partials.approvals-table', ['requests' => $pendingRequests])
                         </div>
                     @endif
+
+                    <!-- TAB 3: FOR OFFICE CLARIFICATION (BOTH SMO & SIGNATORIES) -->
+                    <div class="tab-pane fade" id="clarification">
+                        @if($clarificationRequests->count() > 0)
+                            <div class="p-3 bg-warning-subtle text-dark border-bottom small fw-semibold d-flex align-items-center">
+                                <i data-lucide="alert-circle" class="me-2 text-warning" style="width: 18px;"></i>
+                                The items below have been flagged for inquiry. The requestor and the SMO In-Charge have been asked to appear at the signatory's office for a consultation.
+                            </div>
+                        @endif
+                        @include('admin.partials.approvals-table', ['requests' => $clarificationRequests])
+                    </div>
                 </div>
             </div>
         </div>
@@ -68,30 +97,33 @@
         <!-- REVIEW MODAL -->
         <div class="modal fade" id="reviewModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered">
-                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden bg-white">
                     <div class="modal-header border-0 bg-light p-4">
-                        <h5 class="modal-title fw-bold">Review Requisition <span class="text-muted" x-text="'#' + selectedReq.id"></span></h5>
+                        <div>
+                            <h5 class="modal-title fw-bold text-dark mb-0">Review Requisition <span class="text-success" x-text="'#' + selectedReq.id"></span></h5>
+                            <span class="badge bg-dark rounded-pill px-3 mt-1" style="font-size: 9px;" x-text="(selectedReq.request_type || '').toUpperCase() + ' TIER'"></span>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
                     <div class="modal-body p-4">
                         <!-- REQUESTOR INFO -->
-                        <div class="row mb-4">
+                        <div class="row mb-4 bg-light p-3 rounded-4 g-2">
                             <div class="col-md-6">
-                                <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Requestor</small>
-                                <div class="fw-bold fs-5" x-text="requestorName"></div>
+                                <small class="text-muted text-uppercase fw-bold" style="font-size: 9px;">Official Requestor</small>
+                                <div class="fw-bold fs-6 text-dark" x-text="requestorName"></div>
                             </div>
                             <div class="col-md-6 text-md-end">
-                                <small class="text-muted text-uppercase fw-bold" style="font-size: 10px;">Department</small>
-                                <div class="fw-bold fs-5 text-success" x-text="requestorDept"></div>
+                                <small class="text-muted text-uppercase fw-bold" style="font-size: 9px;">Department / Unit</small>
+                                <div class="fw-bold fs-6 text-success" x-text="requestorDept"></div>
                             </div>
                         </div>
 
                         <!-- DYNAMIC TIMELINE (Alpine Only) -->
-                        <div class="mb-5 px-2">
+                        <div class="mb-4 px-2">
                             <div class="tracking-stepper">
                                 <!-- Step 1 -->
-                                <div class="step-item completed" :class="selectedReq.status == 'pending' ? 'in-progress' : ''">
+                                <div class="step-item completed">
                                     <div class="step-icon"><i data-lucide="send"></i></div>
                                     <div class="step-label">Submitted</div>
                                 </div>
@@ -137,33 +169,33 @@
                             </div>
                         </div>
 
-                        <!-- ITEMS TABLE -->
-                        <h6 class="fw-bold mb-3">Requested Items</h6>
+                        <!-- REQUESTED ITEMS TABLE -->
+                        <h6 class="fw-bold mb-3 text-dark">Requested Item Breakdown</h6>
                         <div class="table-responsive border rounded-3 mb-4">
                             <table class="table table-sm mb-0">
-                                <thead class="bg-light">
+                                <thead class="bg-light text-muted small text-uppercase">
                                     <tr>
-                                        <th class="ps-3">Item</th>
-                                        <th>Qty</th>
-                                        <th class="text-end pe-3">Subtotal</th>
+                                        <th class="ps-3 py-2">Item Name & Specs</th>
+                                        <th class="py-2 text-center">Qty</th>
+                                        <th class="text-end pe-3 py-2">Subtotal</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <template x-for="item in selectedItems" :key="item.id">
                                         <tr>
-                                            <td class="ps-3">
-                                                <div class="fw-bold" x-text="item.item_name"></div>
+                                            <td class="ps-3 py-2">
+                                                <div class="fw-bold text-dark" x-text="item.item_name"></div>
                                                 <small class="text-muted" x-text="item.specifications"></small>
                                             </td>
-                                            <td x-text="item.quantity + ' ' + item.unit"></td>
-                                            <td class="text-end pe-3 fw-bold" x-text="'₱' + parseFloat(item.subtotal).toLocaleString(undefined, {minimumFractionDigits:2})"></td>
+                                            <td class="text-center py-2" x-text="item.quantity + ' ' + (item.unit || 'pc')"></td>
+                                            <td class="text-end pe-3 py-2 fw-bold text-dark" x-text="'₱' + parseFloat(item.subtotal).toLocaleString(undefined, {minimumFractionDigits:2})"></td>
                                         </tr>
                                     </template>
                                 </tbody>
                                 <tfoot class="bg-light fw-bold">
                                     <tr>
-                                        <td colspan="2" class="ps-3 text-uppercase small">Grand Total</td>
-                                        <td class="text-end pe-3 text-success" x-text="'₱' + parseFloat(selectedReq.grand_total).toLocaleString(undefined, {minimumFractionDigits:2})"></td>
+                                        <td colspan="2" class="ps-3 py-2 text-uppercase small text-dark">Grand Total</td>
+                                        <td class="text-end pe-3 py-2 text-success h6 mb-0 fw-black" x-text="'₱' + parseFloat(selectedReq.grand_total || 0).toLocaleString(undefined, {minimumFractionDigits:2})"></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -172,22 +204,45 @@
                         <!-- ACTION FORMS -->
                         <div class="mt-4">
                             @if(Auth::user()->role == 'smo')
+                                <!-- SMO FULFILLMENT FORM -->
                                 <form :action="'{{ url('/admin/requests') }}/' + selectedReq.id + '/release'" method="POST">
                                     @csrf
-                                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 shadow-sm">
-                                        <i data-lucide="package-check" class="me-2" style="width:18px; vertical-align:middle"></i> CONFIRM RELEASE
+                                    <button type="submit" class="btn btn-primary w-100 py-3 fw-bold rounded-3 shadow-sm d-flex align-items-center justify-content-center">
+                                        <i data-lucide="package-check" class="me-2" style="width:18px;"></i> CONFIRM RELEASE & DEDUCT STOCK
                                     </button>
                                 </form>
                             @else
+                                <!-- SIGNATORY 3-BUTTON DECISION FORM -->
                                 <form :action="'{{ url('/admin/requests') }}/' + selectedReq.id + '/status'" method="POST">
                                     @csrf
                                     <div class="mb-3">
-                                        <label class="form-label small fw-bold text-muted uppercase">Signatory Remarks</label>
-                                        <textarea name="remarks" class="form-control border-0 bg-light rounded-3" rows="2" placeholder="Optional note..."></textarea>
+                                        <label class="form-label small fw-bold text-muted text-uppercase tracking-widest" style="font-size: 9px;">
+                                            Signatory Remarks / Clarification Inquiry
+                                        </label>
+                                        <textarea name="remarks" class="form-control border-0 bg-light rounded-3 shadow-none" rows="2" placeholder="State reason if rejecting or requesting office inquiry..."></textarea>
                                     </div>
-                                    <div class="d-flex gap-2">
-                                        <button name="status" value="rejected" class="btn btn-outline-danger fw-bold flex-grow-1 py-2 rounded-3">Reject</button>
-                                        <button name="status" value="approved" class="btn btn-success fw-bold flex-grow-1 py-2 shadow-sm rounded-3">Approve</button>
+
+                                    <div class="row g-2">
+                                        <!-- 1. REJECT BUTTON -->
+                                        <div class="col-md-4">
+                                            <button name="status" value="rejected" type="submit" class="btn btn-outline-danger fw-bold w-100 py-2 rounded-3">
+                                                <i data-lucide="x-circle" class="me-1" style="width:14px; vertical-align: middle;"></i> Reject
+                                            </button>
+                                        </div>
+
+                                        <!-- 2. THE NEW 3RD BUTTON: CALL FOR CLARIFICATION -->
+                                        <div class="col-md-4">
+                                            <button name="status" value="clarification" type="submit" class="btn btn-warning fw-bold text-dark w-100 py-2 rounded-3 shadow-sm">
+                                                <i data-lucide="help-circle" class="me-1" style="width:14px; vertical-align: middle;"></i> Office Inquiry
+                                            </button>
+                                        </div>
+
+                                        <!-- 3. APPROVE BUTTON -->
+                                        <div class="col-md-4">
+                                            <button name="status" value="approved" type="submit" class="btn btn-success fw-bold w-100 py-2 shadow-sm rounded-3">
+                                                <i data-lucide="check-circle" class="me-1" style="width:14px; vertical-align: middle;"></i> Approve
+                                            </button>
+                                        </div>
                                     </div>
                                 </form>
                             @endif
@@ -215,9 +270,9 @@
                     const modal = new bootstrap.Modal(modalEl);
                     modal.show();
 
-                    // Re-render icons on show and after Alpine transitions complete
+                    // Trigger icon re-renders cleanly
                     setTimeout(() => lucide.createIcons(), 100);
-                    setTimeout(() => lucide.createIcons(), 300);
+                    setTimeout(() => lucide.createIcons(), 350);
                 }
             }
         }
