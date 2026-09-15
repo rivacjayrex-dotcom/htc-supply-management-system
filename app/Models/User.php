@@ -23,12 +23,21 @@ class User extends Authenticatable
         'name',
         'username',
         'school_id',
-        'department', // Add this
-        'email',      // We will keep this in DB for system reasons, but hide from UI
+        'department',    // Keep temporarily so old views don't crash
+        'department_id', // <--- ADD THIS
+        'email',
         'password',
         'role',
         'is_approved',
     ];
+
+    /**
+     * The department/college the user belongs to.
+     */
+    public function academicDepartment(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Department::class, 'department_id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.
