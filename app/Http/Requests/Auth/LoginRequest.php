@@ -65,6 +65,15 @@ class LoginRequest extends FormRequest
         Auth::login($user, $this->boolean('remember'));
 
         RateLimiter::clear($this->throttleKey());
+
+        // Security Audit Trail (Activity Logging)
+        \App\Models\UserActivityLog::create([
+            'user_id'    => $user->id,
+            'action'     => "User Authenticated ({$user->role})",
+            'ip_address' => $this->ip(),
+            'user_agent' => $this->userAgent(),
+            'created_at' => now(),
+        ]);
     }
 
     /**
