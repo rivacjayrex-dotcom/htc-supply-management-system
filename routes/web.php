@@ -51,16 +51,11 @@ Route::get('/dashboard', function () {
         $stats['monthly_value'] = Requisition::where('status', 'released')
             ->whereMonth('updated_at', now()->month)->sum('grand_total');
 
-        // SMO TABLE: Only show items that still need to be processed/released
-        $allStaffRequests = Requisition::with(['items', 'user'])
-            ->whereNotIn('status', ['released', 'rejected']) // <--- THE FILTER
-            ->latest()
-            ->get();
+        // SMO TABLE: Only pull active items that still need to be processed or released
+        $query = Requisition::with(['items', 'user'])
+            ->whereNotIn('status', ['released', 'rejected']); // Exclude historical/released records
 
-                $query = Requisition::with(['items', 'user']);
-
-        // 1. Multi-Filter Logic
-        // Filter by Status
+        // Filter by Status (Within Active Lifecycle)
         if (request('status')) {
             if (request('status') === 'near_deadline') {
                 $query->whereIn('status', ['approved_president', 'approved_vp'])
@@ -85,12 +80,10 @@ Route::get('/dashboard', function () {
             $query->whereDate('created_at', '<=', request('date_to'));
         }
 
-        // 2. Multi-Directional Sorting
+        // Sorting
         $sort = request('sort', 'created_at');
         $order = request('order', 'desc');
-        $query->orderBy($sort, $order);
-
-        $allStaffRequests = $query->get();
+        $allStaffRequests = $query->orderBy($sort, $order)->get();
 
         $recentActivity = \App\Models\Notification::where('user_id', $user->id)->latest()->take(5)->get();
     }
