@@ -10,12 +10,32 @@ use Carbon\Carbon;
 class Requisition extends Model
 {
     protected $fillable = [
+        'tracking_number', // e.g. MIN-CETE-20000001
         'user_id',
         'request_type',
         'status',
+        'purpose',
         'remarks',
         'grand_total'
     ];
+
+    /**
+     * Boot function to automatically generate the institutional tracking code upon creation
+     */
+    protected static function booted()
+    {
+        static::created(function ($requisition) {
+            if (empty($requisition->tracking_number)) {
+                $prefix = strtoupper($requisition->request_type) === 'MAJOR' ? 'MAJ' : 'MIN';
+                $tierCode = strtoupper($requisition->request_type) === 'MAJOR' ? '10' : '20';
+                $dept = strtoupper($requisition->user->department ?? 'HTC');
+                $uniqueNumber = $tierCode . str_pad($requisition->id, 6, '0', STR_PAD_LEFT);
+
+                $requisition->tracking_number = "{$prefix}-{$dept}-{$uniqueNumber}";
+                $requisition->saveQuietly();
+            }
+        });
+    }
 
     public function items(): HasMany
     {
@@ -33,16 +53,32 @@ class Requisition extends Model
     }
 
     /**
-     * Check if the requisition is nearing the 3-day SLA (2 days elapsed since final approval)
+     * Accessor for tracking_code compatibility across Blade views
+     */
+    public function getTrackingCodeAttribute(): string
+    {
+        return $this->tracking_number ?? $this->getTrackingCodeFallback();
+    }
+
+    public function getTrackingCodeFallback(): string
+    {
+        $prefix = strtoupper($this->request_type) === 'MAJOR' ? 'MAJ' : 'MIN';
+        $tierCode = strtoupper($this->request_type) === 'MAJOR' ? '10' : '20';
+        $dept = strtoupper($this->user->department ?? 'HTC');
+        $uniqueNumber = $tierCode . str_pad($this->id, 6, '0', STR_PAD_LEFT);
+
+        return "{$prefix}-{$dept}-{$uniqueNumber}";
+    }
+
+    /**
+     * Check if nearing the 3-day SLA (2 days elapsed since final approval)
      */
     public function isNearingDeadline(): bool
     {
-        // Eligible when approved by the highest required authority but not yet released
         $isFullyApproved = ($this->status === 'approved_president') ||
                            ($this->request_type === 'minor' && $this->status === 'approved_vp');
 
         if ($isFullyApproved) {
-            // Checked against updated_at (when the last approval occurred)
             return $this->updated_at->diffInDays(Carbon::now()) >= 2;
         }
 
@@ -50,7 +86,7 @@ class Requisition extends Model
     }
 
     /**
-     * Check if the requisition has exceeded the 3-day processing deadline
+     * Check if exceeded the 3-day processing deadline
      */
     public function isOverdue(): bool
     {
@@ -62,25 +98,5 @@ class Requisition extends Model
         }
 
         return false;
-    }
-
-    /**
-     * Institutional Control Tracking Number
-     * e.g. MIN-CETE-20000001 or MAJ-CBMA-10000001
-     */
-    public function getTrackingCode(): string
-    {
-        $prefix = strtoupper($this->request_type) === 'MAJOR' ? 'MAJ' : 'MIN';
-        $tierCode = strtoupper($this->request_type) === 'MAJOR' ? '10' : '20';
-        $dept = strtoupper($this->user->department ?? 'HTC');
-        $uniqueNumber = $tierCode . str_pad($this->id, 6, '0', STR_PAD_LEFT);
-
-        return "{$prefix}-{$dept}-{$uniqueNumber}";
-    }
-
-    // Optional: Attribute accessor so you can also call $req->tracking_code
-    public function getTrackingCodeAttribute(): string
-    {
-        return $this->getTrackingCode();
     }
 }
