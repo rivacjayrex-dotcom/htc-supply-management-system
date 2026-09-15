@@ -1,12 +1,31 @@
 <?php
 
 namespace App\Models;
+
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Supply extends Model
 {
     protected $fillable = [
-        'item_name', 'brand', 'model_number', 'category',
-        'specifications', 'quantity', 'unit', 'unit_price', 'min_stock_level'
+        'supply_category_id', // <--- ADD THIS
+        'item_name',
+        'brand',
+        'model_number',
+        'category',           // Keep for backwards-compatibility with views
+        'specifications',
+        'physical_description',
+        'quantity',
+        'unit',
+        'unit_price',
+        'min_stock_level',
     ];
+
+    /**
+     * Category that classifies this supply item.
+     */
+    public function supplyCategory(): BelongsTo
+    {
+        return $this->belongsTo(SupplyCategory::class, 'supply_category_id');
+    }
 }
