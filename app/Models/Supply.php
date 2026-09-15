@@ -28,4 +28,9 @@ class Supply extends Model
     {
         return $this->belongsTo(SupplyCategory::class, 'supply_category_id');
     }
+
+    public function inventoryLogs(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(SupplyInventoryLog::class);
+    }
 }

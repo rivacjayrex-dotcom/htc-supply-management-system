@@ -4,10 +4,11 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use App\Models\Requisition;
 use App\Models\RequisitionItem;
+use App\Models\SupplyInventoryLog;
 use App\Models\User;
 use App\Models\Supply;
 use App\Models\ApprovalLog;
-use App\Models\DigitalSignature; // <--- ADDED
+use App\Models\DigitalSignature;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -287,16 +288,26 @@ class RequestController extends Controller
             $deductedItems = [];
 
             // Check and deduct items that exist in our inventory catalog
-            foreach ($sr->items()->get() as $item) {
-                // Look for matching item name (case-insensitive)
-                $inventoryItem = Supply::where('item_name', 'LIKE', trim($item->item_name))->first();
+         foreach ($sr->items()->get() as $item) {
+             // Look for matching item name (case-insensitive)
+             $inventoryItem = Supply::where('item_name', 'LIKE', trim($item->item_name))->first();
 
-                if ($inventoryItem) {
-                    if ($inventoryItem->quantity < $item->quantity) {
-                        return back()->with('error', "Insufficient stock for '{$item->item_name}'. Available: {$inventoryItem->quantity}, Requested: {$item->quantity}.");
-                    }
-                    $inventoryItem->decrement('quantity', $item->quantity);
-                    $deductedItems[] = "{$item->item_name} (-{$item->quantity})";
+             if ($inventoryItem) {
+                 if ($inventoryItem->quantity < $item->quantity) {
+                     return back()->with('error', "Insufficient stock for '{$item->item_name}'. Available: {$inventoryItem->quantity}, Requested: {$item->quantity}.");
+                 }
+                 $inventoryItem->decrement('quantity', $item->quantity);
+                 // Record Immutable Inventory Audit Log (3NF Traceability)
+                 \App\Models\SupplyInventoryLog::create([
+                     'supply_id'        => $inventoryItem->id,
+                     'user_id'          => Auth::id(),
+                     'requisition_id'   => $sr->id,
+                     'transaction_type' => 'release_deduction',
+                     'quantity_change'  => -$item->quantity,
+                     'balance_after'    => $inventoryItem->quantity,
+                     'remarks'          => "Fulfillment of {$sr->tracking_code} for {$sr->user->name}",
+                 ]);
+                 $deductedItems[] = "{$item->item_name} (-{$item->quantity})";
                 }
             }
 
