@@ -6,6 +6,8 @@ use App\Models\Requisition;
 use App\Models\RequisitionItem;
 use App\Models\User;
 use App\Models\Supply;
+use App\Models\ApprovalLog;
+use App\Models\DigitalSignature; // <--- ADDED
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 
 class RequestController extends Controller
 {
- /**
+    /**
      * Active Requisitions (Pending, In-Progress, Approved)
      */
     public function index(Request $request)
@@ -87,66 +89,66 @@ class RequestController extends Controller
         return view('requests.archive', compact('archivedRequests'));
     }
 
-/**
+    /**
      * Admin/Signatory Approval Queue
      */
     public function adminIndex()
-        {
-            $user = Auth::user();
+    {
+        $user = Auth::user();
 
-            // Standard pending query
-            $query = Requisition::with(['items', 'user']);
+        // Standard pending query
+        $query = Requisition::with(['items', 'user']);
 
-            switch ($user->role) {
-                case 'dept_head':
-                    $query->where('status', 'pending')
-                        ->whereHas('user', fn($u) => $u->where('department', $user->department));
-                    break;
-                case 'vp_finance':
-                    $query->where('status', 'approved_dept')->where('request_type', 'minor');
-                    break;
-                case 'vp_admin':
-                    $query->where('status', 'approved_dept')->where('request_type', 'major');
-                    break;
-                case 'provost':
-                    $query->where('status', 'approved_vp')->where('request_type', 'major');
-                    break;
-                case 'president':
-                    $query->where('status', 'approved_provost')->where('request_type', 'major');
-                    break;
-                case 'smo':
-                    $query->where(function ($q) {
-                        $q->where(function ($sub) {
-                            $sub->where('request_type', 'minor')->where('status', 'approved_vp');
-                        })->orWhere(function ($sub) {
-                            $sub->where('status', 'approved_president');
-                        });
+        switch ($user->role) {
+            case 'dept_head':
+                $query->where('status', 'pending')
+                    ->whereHas('user', fn($u) => $u->where('department', $user->department));
+                break;
+            case 'vp_finance':
+                $query->where('status', 'approved_dept')->where('request_type', 'minor');
+                break;
+            case 'vp_admin':
+                $query->where('status', 'approved_dept')->where('request_type', 'major');
+                break;
+            case 'provost':
+                $query->where('status', 'approved_vp')->where('request_type', 'major');
+                break;
+            case 'president':
+                $query->where('status', 'approved_provost')->where('request_type', 'major');
+                break;
+            case 'smo':
+                $query->where(function ($q) {
+                    $q->where(function ($sub) {
+                        $sub->where('request_type', 'minor')->where('status', 'approved_vp');
+                    })->orWhere(function ($sub) {
+                        $sub->where('status', 'approved_president');
                     });
-                    break;
-                default:
-                    $query->whereRaw('1 = 0');
-                    break;
-            }
-
-            $pendingRequests = $query->latest()->get();
-
-            // Dedicated list for requests placed on hold / for clarification
-            $clarificationRequests = Requisition::with(['items', 'user'])
-                ->where('status', 'for_clarification')
-                ->latest()
-                ->get();
-
-            if ($user->role === 'smo') {
-                $pendingMinor = $pendingRequests->where('request_type', 'minor');
-                $pendingMajor = $pendingRequests->where('request_type', 'major');
-
-                return view('admin.approvals', compact('pendingMinor', 'pendingMajor', 'clarificationRequests'));
-            }
-
-            return view('admin.approvals', compact('pendingRequests', 'clarificationRequests'));
+                });
+                break;
+            default:
+                $query->whereRaw('1 = 0');
+                break;
         }
 
-/**
+        $pendingRequests = $query->latest()->get();
+
+        // Dedicated list for requests placed on hold / for clarification
+        $clarificationRequests = Requisition::with(['items', 'user'])
+            ->where('status', 'for_clarification')
+            ->latest()
+            ->get();
+
+        if ($user->role === 'smo') {
+            $pendingMinor = $pendingRequests->where('request_type', 'minor');
+            $pendingMajor = $pendingRequests->where('request_type', 'major');
+
+            return view('admin.approvals', compact('pendingMinor', 'pendingMajor', 'clarificationRequests'));
+        }
+
+        return view('admin.approvals', compact('pendingRequests', 'clarificationRequests'));
+    }
+
+    /**
      * Update Approval Status (Signatories)
      */
     public function updateStatus(Request $request, $id)
@@ -237,20 +239,33 @@ class RequestController extends Controller
 
         $sr->save();
 
-        \App\Models\ApprovalLog::create([
+        // Log the decision
+        $log = ApprovalLog::create([
             'requisition_id' => $sr->id,
             'action'         => $actionText,
             'role'           => $role,
             'remarks'        => $request->remarks,
         ]);
 
+        // Cryptographic Digital Signature Generation (RA 8792 E-Commerce Act Compliance)
+        if ($request->status === 'approved') {
+            $rawPayload = "REQ-{$sr->id}|USER-" . Auth::id() . "|ROLE-{$role}|TIME-" . now()->timestamp . "|SECRET-" . config('app.key');
+            $signatureToken = hash('sha256', $rawPayload);
+
+            DigitalSignature::create([
+                'approval_log_id' => $log->id,
+                'signature_token' => $signatureToken,
+                'signer_name'     => Auth::user()->name,
+                'signer_role'     => $position,
+                'ip_address'      => $request->ip(),
+                'user_agent'      => $request->userAgent(),
+                'signed_at'       => now(),
+            ]);
+        }
+
         return redirect()->route('admin.approvals')->with('success', "Requisition #{$sr->id} status updated.");
     }
 
-
-/**
-     * SMO Confirmation & Release (Fulfillment)
-     */
     /**
      * SMO Confirmation & Release (Fulfillment)
      */
@@ -294,11 +309,25 @@ class RequestController extends Controller
                 ? 'Released by SMO. Stock deducted: ' . implode(', ', $deductedItems)
                 : 'Released by SMO. Special requisition processed.';
 
-            \App\Models\ApprovalLog::create([
+            $log = ApprovalLog::create([
                 'requisition_id' => $sr->id,
                 'action'         => 'Released and Fulfilled by SMO In-Charge',
                 'role'           => 'smo',
                 'remarks'        => $logRemarks,
+            ]);
+
+            // Cryptographic Digital Signature for Release
+            $rawPayload = "RELEASE-{$sr->id}|USER-" . Auth::id() . "|TIME-" . now()->timestamp . "|SECRET-" . config('app.key');
+            $signatureToken = hash('sha256', $rawPayload);
+
+            DigitalSignature::create([
+                'approval_log_id' => $log->id,
+                'signature_token' => $signatureToken,
+                'signer_name'     => Auth::user()->name,
+                'signer_role'     => 'SMO In-Charge',
+                'ip_address'      => request()->ip(),
+                'user_agent'      => request()->userAgent(),
+                'signed_at'       => now(),
             ]);
 
             // Notify Requester
@@ -313,13 +342,14 @@ class RequestController extends Controller
             return redirect()->route('admin.approvals')->with('success', "Requisition #{$sr->id} successfully confirmed and released!");
         });
     }
+
     /**
      * Notifications Center
      */
     public function notifications()
     {
         $user = Auth::user();
-        $allNotes = \App\Models\Notification::where('user_id', $user->id)->latest()->get();
+        $allNotes = Notification::where('user_id', $user->id)->latest()->get();
 
         // Categorized notes for tabs
         $approvalNotes = $allNotes->where('type', 'success');
@@ -327,33 +357,32 @@ class RequestController extends Controller
 
         // 1. Data for SMO (Critical Deadlines)
         $criticalRequests = ($user->role == 'smo')
-            ? \App\Models\Requisition::with('items') // <--- ADD .with('items') HERE
+            ? Requisition::with('items')
                 ->whereIn('status', ['approved_president', 'approved_vp'])
                 ->where('updated_at', '<=', now()->subDays(2))->get()
             : [];
 
         // 2. Data for Employee/Staff (Personal Summary)
         $personalStats = [
-            'total' => \App\Models\Requisition::where('user_id', $user->id)->count(),
-            'pending' => \App\Models\Requisition::where('user_id', $user->id)->where('status', 'pending')->count(),
-            'released' => \App\Models\Requisition::where('user_id', $user->id)->where('status', 'released')->count(),
+            'total'    => Requisition::where('user_id', $user->id)->count(),
+            'pending'  => Requisition::where('user_id', $user->id)->where('status', 'pending')->count(),
+            'released' => Requisition::where('user_id', $user->id)->where('status', 'released')->count(),
         ];
 
-        \App\Models\Notification::where('user_id', $user->id)->where('is_read', false)->update(['is_read' => true]);
+        Notification::where('user_id', $user->id)->where('is_read', false)->update(['is_read' => true]);
 
         return view('notifications', compact('allNotes', 'approvalNotes', 'deadlineNotes', 'criticalRequests', 'personalStats'));
     }
 
     public function show($id)
     {
-        $request = Requisition::with(['user', 'items', 'logs'])->findOrFail($id);
+        $request = Requisition::with(['user', 'items', 'logs.digitalSignature'])->findOrFail($id);
         return view('requests.show', compact('request'));
     }
 
     public function downloadPDF($id)
     {
-        // FIX: Change SupplyRequest to Requisition for the PDF
-        $request = Requisition::with(['user', 'items'])->findOrFail($id);
+        $request = Requisition::with(['user', 'items', 'logs.digitalSignature'])->findOrFail($id);
         $pdf = Pdf::loadView('requests.pdf', compact('request'));
         return $pdf->download('HTC-Requisition-'.$request->id.'.pdf');
     }
@@ -362,29 +391,24 @@ class RequestController extends Controller
     {
         Notification::create([
             'user_id' => $userId,
-            'title' => $title,
+            'title'   => $title,
             'message' => $message,
-            'icon' => $icon,
-            'type' => $type
+            'icon'    => $icon,
+            'type'    => $type
         ]);
     }
 
     public function getLatestNotification()
     {
-        // Fetch the most recent unread notification for the user
-        $notification = \App\Models\Notification::where('user_id', Auth::id())
+        $notification = Notification::where('user_id', Auth::id())
             ->where('is_read', false)
             ->latest()
             ->first();
 
         if ($notification) {
-            // We don't mark it as read yet, so the badge in the sidebar stays.
-            // But we return it to show the pop-up.
             return response()->json($notification);
         }
 
         return response()->json(null);
     }
 }
-
-

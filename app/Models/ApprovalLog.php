@@ -4,14 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class ApprovalLog extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'requisition_id',
         'action',
@@ -19,11 +15,16 @@ class ApprovalLog extends Model
         'remarks',
     ];
 
-    /**
-     * Get the requisition associated with this log.
-     */
     public function requisition(): BelongsTo
     {
         return $this->belongsTo(Requisition::class);
+    }
+
+    /**
+     * The cryptographic digital signature generated for this action.
+     */
+    public function digitalSignature(): HasOne
+    {
+        return $this->hasOne(DigitalSignature::class);
     }
 }
