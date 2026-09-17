@@ -307,6 +307,7 @@ class RequestController extends Controller
                      'balance_after'    => $inventoryItem->quantity,
                      'remarks'          => "Fulfillment of {$sr->tracking_code} for {$sr->user->name}",
                  ]);
+
                  $deductedItems[] = "{$item->item_name} (-{$item->quantity})";
                 }
             }

@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Department;
+use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,6 +22,7 @@ class ProfileController extends Controller
     {
         return view('profile.edit', [
             'user' => $request->user(),
+            'departments' => Department::orderBy('dept_name')->get(),
         ]);
     }
 
@@ -43,7 +47,12 @@ class ProfileController extends Controller
             $request->user()->profile_photo = $path;
         }
 
-        $request->user()->fill($request->validated());
+        $validated = $request->validated();
+        $validated['department_id'] = isset($validated['department'])
+            ? Department::where('dept_code', $validated['department'])->value('id')
+            : null;
+
+        $request->user()->fill($validated);
 
         if ($request->user()->isDirty('email')) {
             $request->user()->email_verified_at = null;
@@ -58,68 +67,68 @@ class ProfileController extends Controller
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse
-        {
-            $request->validateWithBag('userDeletion', [
-                'password' => ['required', 'current_password'],
-            ]);
+    {
+        $request->validateWithBag('userDeletion', [
+            'password' => ['required', 'current_password'],
+        ]);
 
-            $user = $request->user();
+        $user = $request->user();
 
-            Auth::logout();
+        Auth::logout();
 
-            $user->delete();
+        $user->delete();
 
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-            return Redirect::to('/');
-        }
+        return Redirect::to('/');
+    }
 
-        public function pendingUsers()
-        {
-            // Fetch all users where is_approved is 0 (false)
-            // and exclude the SMO themselves so they don't see their own account
-            $users = \App\Models\User::where('is_approved', false)
-                        ->where('id', '!=', Auth::id())
-                        ->get();
+    public function pendingUsers()
+    {
+        // Fetch all users where is_approved is 0 (false)
+        // and exclude the SMO themselves so they don't see their own account
+        $users = User::where('is_approved', false)
+            ->where('id', '!=', Auth::id())
+            ->get();
 
-            return view('admin.pending-users', compact('users'));
-        }
+        return view('admin.pending-users', compact('users'));
+    }
 
     public function approveUser(Request $request, $id)
     {
-        $user = \App\Models\User::findOrFail($id);
+        $user = User::findOrFail($id);
 
         // 1. Assign the role chosen by the SMO
         // 2. Set is_approved to true
         $user->update([
             'role' => $request->role,
-            'is_approved' => true
+            'is_approved' => true,
         ]);
 
-        \App\Models\Notification::create([
+        Notification::create([
             'user_id' => $user->id,
             'title' => 'Account Activated',
             'message' => "Your account has been verified as {$request->role}. You now have full system access.",
             'icon' => 'shield-check',
-            'type' => 'success'
+            'type' => 'success',
         ]);
 
-        return back()->with('success', "Access granted. {$user->name} is now registered as " . strtoupper($request->role));
+        return back()->with('success', "Access granted. {$user->name} is now registered as ".strtoupper($request->role));
     }
 
     public function manageUsers(Request $request)
     {
         // Fetch all approved personnel
-        $query = \App\Models\User::where('is_approved', true);
+        $query = User::where('is_approved', true);
 
         // Optional search filter by name or ID
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('school_id', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
+                    ->orWhere('school_id', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%");
             });
         }
 

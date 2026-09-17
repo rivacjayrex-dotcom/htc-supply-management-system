@@ -35,17 +35,15 @@ class SupplyController extends Controller
             'unit_price'      => 'required|numeric|min:0.01',
             'min_stock_level' => 'required|integer|min:0',
             'model_number'    => 'nullable|string|max:100',
-        ], [
-            'item_name.unique'   => 'An item with this name already exists in the inventory.',
-            'specifications.min' => 'Specifications must be at least 5 characters.',
-            'category.in'        => 'Please choose a valid category from the list.',
-            'unit.in'            => 'Please select an authorized unit of measure.',
         ]);
 
-        // Mirror specifications into physical_description if the DB has both columns
-        $validated['physical_description'] = $validated['specifications'];
+        // Link the foreign key supply_category_id automatically
+        $categoryRecord = \App\Models\SupplyCategory::where('category_name', $validated['category'])->first();
+        if ($categoryRecord) {
+            $validated['supply_category_id'] = $categoryRecord->id;
+        }
 
-        \App\Models\Supply::create($validated);
+        Supply::create($validated);
 
         return redirect()->route('inventory.index')->with('success', "Item '{$validated['item_name']}' has been registered into inventory.");
     }
@@ -76,18 +74,17 @@ class SupplyController extends Controller
             'unit_price'      => 'required|numeric|min:0.01',
             'min_stock_level' => 'required|integer|min:0',
             'model_number'    => 'nullable|string|max:100',
-        ], [
-            'item_name.unique'   => 'Another item with this name already exists in inventory.',
-            'specifications.min' => 'Please provide at least 3 characters for specifications.',
-            'category.in'        => 'Please select a valid institutional category.',
         ]);
 
-        // Keep physical_description synced if the database column exists
-        $validated['physical_description'] = $validated['specifications'];
+        // Keep category foreign key synced
+        $categoryRecord = \App\Models\SupplyCategory::where('category_name', $validated['category'])->first();
+        if ($categoryRecord) {
+            $validated['supply_category_id'] = $categoryRecord->id;
+        }
 
         $item->update($validated);
 
-        return redirect()->route('inventory.index')->with('success', "Record for '{$item->item_name}' has been successfully updated.");
+        return redirect()->route('inventory.index')->with('success', "Record for '{$item->item_name}' has been updated.");
     }
 
     /**

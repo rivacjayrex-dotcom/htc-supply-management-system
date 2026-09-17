@@ -18,6 +18,19 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
+            'username' => [
+                'required',
+                'string',
+                'min:4',
+                'max:30',
+                'alpha_dash:ascii',
+                Rule::unique(User::class)->ignore($this->user()->id),
+            ],
+            'department' => [
+                'nullable',
+                'string',
+                Rule::exists('departments', 'dept_code'),
+            ],
             'email' => [
                 'required',
                 'string',
@@ -27,5 +40,20 @@ class ProfileUpdateRequest extends FormRequest
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
         ];
+    }
+
+    /**
+     * Normalize profile values before validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'name' => preg_replace('/\s+/', ' ', trim((string) $this->name)),
+            'username' => strtolower(trim((string) $this->username)),
+            'department' => $this->filled('department')
+                ? strtoupper(trim((string) $this->department))
+                : null,
+            'email' => strtolower(trim((string) $this->email)),
+        ]);
     }
 }
